@@ -1,6 +1,9 @@
 Summary: Command-line universal database client.
+
 Version: 1.0
+
 Author: David Joel Lambert
+
 Date: October 17, 2017
 
 Purpose:
