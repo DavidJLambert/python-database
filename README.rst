@@ -6,6 +6,7 @@ Author: David Joel Lambert
 
 Date: October 17, 2017
 
+
 Purpose:
 
 A sample of the author's Python coding, to denomstrate that he can write decent
