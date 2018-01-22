@@ -21,7 +21,7 @@ of adding code for DB2 and adding a DB2 sample database.
 
 Bundled with this code are 3 VirtualBox Linux guests containing sample 
 databases, one each for Microsoft SQL Server 2017 (which runs on several Linux 
-distros!) PostgreSQL, and MySQL.  Sample Microsoft Access and SQLite databases 
+distros!), PostgreSQL, and MySQL.  Sample Microsoft Access and SQLite databases 
 are also included.  The sample databases all contain the same data: the small 
 version of the Dell DVD Store database, version 2.1.
 
