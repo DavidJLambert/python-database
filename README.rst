@@ -6,7 +6,6 @@ Author: David Joel Lambert
 
 Date: January 22, 2018
 
-
 Purpose:
 
 A sample of the author's Python coding, to demonstrate that he can write decent 
@@ -25,6 +24,9 @@ databases, one each for Microsoft SQL Server 2017 (which runs on several Linux
 distros!) PostgreSQL, and MySQL.  Sample Microsoft Access and SQLite databases 
 are also included.  The sample databases all contain the same data: the small 
 version of the Dell DVD Store database, version 2.1.
+
+Also bundled is a Windows installation of Python 3.6.2.  This is done because 
+this installation includes a number of Python packages.
 
 The code for the 5 implemented databases has been tested with CRUD statements
 (Create, Read, Update, Delete).  There is nothing to prevent the end-user from
