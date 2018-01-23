@@ -1,7 +1,5 @@
 The 7-zipped virtual machine files are bigger than GitHub allows, so they're 
-posted online
-
-python362.7z (27.5 MB), https://1drv.ms/u/s!AieKzIY33GmRgcEsjum0e4xpPw5d-w
+posted online.
 
 turnkey-mysql.7z (392 MB),
     
