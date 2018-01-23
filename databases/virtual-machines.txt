@@ -1,0 +1,4 @@
+VM Name	VM Memory	OS	Desktop	Command to start desktop	OS User Name	OS User Password	OS Root Password	DB Type	DB User Name	DB User Password	DB Name	Database Port	Command line DB client	GUI DB Client	Web Shell Port	Webmin Port	Adminer Port	SSH/SFTP Port	
+turnkey-mysql	1 GB	debian 8.9	LXDE	startx	root	password	password	mysql Ver 14.14 Distrib 5.5.57	root	password	DS2	3306	mysql -u root -h localhost -p	MySQL Workbench 6.2	12320	12321	12322	22	
+turnkey-postgresql	1 GB	debian 8.9	LXDE	startx	root	password	password	postgreSQL 9.4.13	root	password	DS2	5432	psql -U postgres -h localhost	pgAdmin III	12320	12321	12322	22	
+UbuntuSqlServer2017	1 GB	Ubuntu Server 16.04.3	None	N/A	dba	password	(use sudo)	SQL Server 2017	SA	Pa$$W0rd	DS2	1433	sqlcmd -U SA -S localhost -P	N/A	N/A	N/A	N/A	22	
