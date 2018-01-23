@@ -26,7 +26,7 @@ are also included.  The sample databases all contain the same data: the small
 version of the Dell DVD Store database, version 2.1.
 
 Also bundled is a Windows installation of Python 3.6.2.  This is done because 
-this installation includes a number of Python packages.
+a number of Python packages have been added to this installation.
 
 The code for the 5 implemented databases has been tested with CRUD statements
 (Create, Read, Update, Delete).  There is nothing to prevent the end-user from
