@@ -7,8 +7,8 @@ turnkey-mysql.7z (392 MB)
 turnkey-postgresql.7z (393 MB)
     https://1drv.ms/u/s!AieKzIY33GmRgcEt2sTiX6fkFNxzhA
 
-UbuntuSqlServer2017.7z (848 MB),
-    
+UbuntuSqlServer2017.7z (848 MB)
+    https://1drv.ms/u/s!AieKzIY33GmRgcEvurzp5sn7qKmyIw
 
 I wish UbuntuSqlServer2017 was smaller, but most of this is Ubuntu Server and 
 I don't know enough Linux to identify and remove unused packages and previous 
