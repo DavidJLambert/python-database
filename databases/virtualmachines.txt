@@ -1,5 +1,5 @@
 The 7-zipped virtual machine files are bigger than GitHub allows, so they're 
-posted online.
+posted elsewhere.
 
 turnkey-mysql.7z (392 MB),
     
@@ -10,6 +10,7 @@ turnkey-postgresql.7z (393 MB),
 UbuntuSqlServer2017.7z (848 MB),
     
 
-I wish UbuntuSqlServer2017 was smaller, but most of the size is Ubuntu Server 
-and I'm not a linux expert.  Surprisingly, the Ubuntu Server virtual machine 
+I wish UbuntuSqlServer2017 was smaller, but most of this is Ubuntu Server and 
+I don't know enough Linux to identify and remove unused packages and previous 
+versions of kernels.  Surprisingly, the Ubuntu Server virtual machine 
 has no desktop and the 2 turnkey virtual machines do.
