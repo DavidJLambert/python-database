@@ -1,39 +1,146 @@
-Summary: Command-line universal database client.
+Universal Database Client
+-------------------------
 
-Version: 1.1
+SUMMARY:
+  Command-line universal database client.
 
-Author: David Joel Lambert
+VERSION:
+  0.1.0
 
-Date: January 22, 2018
+AUTHOR:
+  David J. Lambert
 
-Purpose:
+DATE:
+  September 19, 2018
 
-A sample of the author's Python coding, to demonstrate that he can write decent 
-Python, and that he knows relational databases.
+PURPOSE:
+  A sample of my Python coding, to demonstrate that I can write decent Python,
+  test it, and document it.  I also demonstrate that I know relational
+  databases and Linux.
 
-Description:
+DESCRIPTION:
+  This is a command-line program that asks an end-user for SQL to execute on 1
+  of 7 different relational databases:
 
-This is a command-line program that asks an end-user for SQL to execute on one 
-of five different relational databases: Microsoft SQL Server, PostgreSQL, MySQL, 
-Microsoft Access, and SQLite. The code contains complete Oracle hooks, but no 
-sample Oracle database exists (at the moment).  The author also has ambitions 
-of adding code for DB2 and adding a DB2 sample database.
+  - Oracle
+  - MySQL
+  - Microsoft SQL Server
+  - PostgreSQL
+  - IBM DB2 (untested)
+  - Microsoft Access 2016
+  - SQLite
 
-Bundled with this code are 3 VirtualBox Linux guests containing sample 
-databases, one each for Microsoft SQL Server 2017 (which runs on several Linux 
-distros!), PostgreSQL, and MySQL.  Sample Microsoft Access and SQLite databases 
-are also included.  The sample databases all contain the same data: the small 
-version of the Dell DVD Store database, version 2.1.
+  I also provide sample databases to run this program against (see below).
+  The code for DB2 is untested.
 
-Also bundled is a Windows installation of Python 3.6.2.  This is done because 
-a number of Python packages have been added to this installation.
+  The code for the 6 tested database types has been tested with CRUD statements
+  (Create, Read, Update, Delete).  There is nothing to prevent the end-user
+  from entering other SQL, such as ALTER DATABASE, CREATE VIEW, and BEGIN
+  TRANSACTION, but none have been tested.
 
-The code for the 5 implemented databases has been tested with CRUD statements
-(Create, Read, Update, Delete).  There is nothing to prevent the end-user from
-entering other SQL, such as ALTER DATABASE, CREATE VIEW, and BEGIN TRANSACTION,
-but none have been tested.
+  A future version might include the ability to list databases, tables, views,
+  indexes, and their fields without having to know the structure of any data
+  dictionaries.  This is the easiest addition to make, so it is the most
+  probable addition to this package.
 
-A future version might include the ability to list databases, tables, views,
-indexes, and their fields without having to know the structure of any data
-dictionaries.  This is the easiest addition to make, so it is the most probable
-addition to this package.
+PROGRAM REQUIREMENTS:
+  + For connecting to Oracle, my code uses the cx_Oracle library, which is
+    available on PyPI.  The cx_Oracle library requires the Oracle client
+    libraries.  Several ways to obtain the Oracle client libraries are
+    documented on https://cx-oracle.readthedocs.io/en/latest/installation.html.
+    Python versions 2.7 and 3.5-3.7 are supported by cx_Oracle v7.0.0.
+    Oracle versions 11.2-18.3 are supported by cx_Oracle v7.0.0.
+  + For connecting to MySQL, my code uses the pymysql library, which is
+    available on PyPI.
+    Python versions 2.7 and 3.4-3.7 are supported by pymysql v0.9.2.
+    MySQL and MariaDB versions 5.5 and newer are supported by pymysql v0.9.2.
+  + For connecting to Microsoft SQL Server, my code uses the pymssql library,
+    which is available on PyPI.  The pymssql library requires Microsoft Visual
+    C++ 14, which is available as "Microsoft Visual C++ Build Tools" on
+    http://landinghub.visualstudio.com/visual-cpp-build-tools.
+    Python versions 2.7 and 3.4-3.7 are supported by pymssql v2.1.4.
+    Microsoft SQL Server versions 2005 and newer are supported by pymssql
+    v2.1.4.
+  + For connecting to PostgreSQL, my code uses psycopg2 library, which
+    is available on PyPI.
+    Python versions 2.6-2.7 and 3.2-3.6 are supported by psycopg2 v2.7.5.  I
+    have no problems with using Python 3.7, even though it is unsupported.
+    PostgreSQL server versions 7.4-10 are supported by psycopg2 v2.7.5.
+  + For connecting to IBM DB2, my code uses the ibm_db library, which is
+    available on PyPI.  The ibm_db library library requires Microsoft Visual
+    C++ 14, which is available as "Microsoft Visual C++ Build Tools" on
+    http://landinghub.visualstudio.com/visual-cpp-build-tools.
+    I can not find which Python versions are supported by ibm_db v2.0.9, but I
+    had no problems installing it in Python versions 2.7 and 3.3-3.7.
+  + For connecting to Microsoft Access 2016, my code uses the pyodbc library,
+    which is available on PyPI.  The pyodbc library requires the "Microsoft
+    Access Database Engine 2016 Redistributable", which is available from
+    https://www.microsoft.com/en-us/download/details.aspx?id=54920.
+    Python versions 2.7 and 3.4-3.6 are supported by pyodbc v4.0.24.
+  + For connecting to SQLite, my code uses the sqlite3 library, part of the
+    Python Standard Library.
+    The sqlite3 library has been in the Standard Library since Python 2.5.
+
+SAMPLE DATABASES TO TEST THIS PROGRAM ON:
+  I provide 5 sample databases to run this program against, one for each of the
+  5 types of tested database types listed in the previous section.  I have
+  ambitions of creating sample Oracle and DB2 databases.
+
+  Sample SQLite and Microsoft Access databases are included in this package in
+  these locations:
+
+  - databases/ds2.sqlite3
+  - databases/ds2.accdb
+
+  There are 3 VirtualBox Linux guests containing sample databases, one each for
+  Microsoft SQL Server on Ubuntu (officially supported!), MySQL on Debian, and
+  PostgreSQL on Debian.
+
+  - MySQL:                https://1drv.ms/u/s!AieKzIY33GmRgcExQPbjBZ62X4tPCQ
+  - Microsoft SQL Server: https://1drv.ms/u/s!AieKzIY33GmRgcQXIZ9mvqPNcEqHdw
+  - PostgreSQL:           https://1drv.ms/u/s!AieKzIY33GmRgcEwOQinckQ9Buyk9w
+
+  The sample databases all have the same data: the small version of the Dell
+  DVD Store database, version 2.1, available at http://linux.dell.com/dvdstore.
+  The data is in these tables:
+
+  - CATEGORIES     --     16 records
+  - CUSTOMERS      -- 20,000 records
+  - CUST_HIST      -- 60,350 records
+  - INVENTORY      -- 10,000 records
+  - ORDERLINES     -- 60,350 records
+  - ORDERS         -- 12,000 records
+  - PRODUCTS       -- 10,000 records
+  - REORDER        --      0 records
+  - I've added table db_description, containing 1 record with my name and
+    contact information.
+
+  The MySQL sample database:
+    - Can be downloaded from https://1drv.ms/u/s!AieKzIY33GmRgcExQPbjBZ62X4tPCQ.
+    - MySQL 5.5.60 on an Oracle VirtualBox virtual machine running Debian 8.11
+      Jessie.  I've installed LXDE desktop 0.99.0-1 on it.
+    - This virtual machine is based on a virtual machine created by Turnkey
+      Linux (Turnkey GNU/Linux version 14.2), which is available at
+      https://www.turnkeylinux.org/mysql.
+
+  The Microsoft SQL Server sample database:
+    - Can be downloaded from https://1drv.ms/u/s!AieKzIY33GmRgcQXIZ9mvqPNcEqHdw.
+    - Microsoft SQL Server 2017 Express Edition on an Oracle VirtualBox virtual
+      machine running Ubuntu 16.04.3 server.  No desktop environment, command
+      line only.
+    - This virtual machine was installed from a Ubuntu 16.04.3 server iso image
+      downloaded from https://www.ubuntu.com/download/server.
+
+  The PostgreSQL sample database:
+    - Can be downloaded from https://1drv.ms/u/s!AieKzIY33GmRgcEwOQinckQ9Buyk9w.
+    - PostgreSQL 9.4.19 on an Oracle VirtualBox virtual machine running Debian
+      8.11 Jessie.  I've installed LXDE desktop 0.99.0-1 on it.
+    - This virtual machine is based on a virtual machine created by Turnkey
+      Linux (Turnkey GNU/Linux version 14.2), which is available at
+      https://www.turnkeylinux.org/mysql.
+
+  The Microsoft Access 2016 sample database:
+    - Included in this package as databases/ds2.accdb.
+
+  The SQLite sample database:
+    - Included in this package as databases/ds2.sqlite3.

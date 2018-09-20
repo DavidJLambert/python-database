@@ -2,6 +2,9 @@
 __pycache__/
 *.py[cod]
 *$py.class
+pytest/testUniversalClientMonkeyPatch.py
+databases/urls.txt
+IDEAS.txt
 
 # Other
 junk
