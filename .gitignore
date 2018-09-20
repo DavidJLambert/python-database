@@ -6,5 +6,3 @@ junk/
 *.py[cod]
 *$py.class
 test/testUniversalClientMonkeyPatch.py
-databases/urls.txt
-IDEAS.txt
