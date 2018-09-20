@@ -46,41 +46,54 @@ DESCRIPTION:
   probable addition to this package.
 
 PROGRAM REQUIREMENTS:
+
   + For connecting to Oracle, my code uses the cx_Oracle library, which is
     available on PyPI.  The cx_Oracle library requires the Oracle client
     libraries.  Several ways to obtain the Oracle client libraries are
     documented on https://cx-oracle.readthedocs.io/en/latest/installation.html.
-    Python versions 2.7 and 3.5-3.7 are supported by cx_Oracle v7.0.0.
-    Oracle versions 11.2-18.3 are supported by cx_Oracle v7.0.0.
+
+    Cx_Oracle v7.0.0 supports Python versions 2.7 and 3.5-3.7, and Oracle
+    versions 11.2-18.3.
+
   + For connecting to MySQL, my code uses the pymysql library, which is
     available on PyPI.
-    Python versions 2.7 and 3.4-3.7 are supported by pymysql v0.9.2.
-    MySQL and MariaDB versions 5.5 and newer are supported by pymysql v0.9.2.
+
+    Pymysql v0.9.2 supports Python versions 2.7 and 3.4-3.7, plus MySQL and
+    MariaDB versions 5.5 and newer.
+
   + For connecting to Microsoft SQL Server, my code uses the pymssql library,
     which is available on PyPI.  The pymssql library requires Microsoft Visual
     C++ 14, which is available as "Microsoft Visual C++ Build Tools" on
     http://landinghub.visualstudio.com/visual-cpp-build-tools.
-    Python versions 2.7 and 3.4-3.7 are supported by pymssql v2.1.4.
-    Microsoft SQL Server versions 2005 and newer are supported by pymssql
-    v2.1.4.
-  + For connecting to PostgreSQL, my code uses psycopg2 library, which
+
+    Pymssql v2.1.4 supports Python versions 2.7 and 3.4-3.7, and Microsoft SQL
+    Server versions 2005 and newer.
+
+  + For connecting to PostgreSQL, my code uses the psycopg2 library, which
     is available on PyPI.
-    Python versions 2.6-2.7 and 3.2-3.6 are supported by psycopg2 v2.7.5.  I
-    have no problems with using Python 3.7, even though it is unsupported.
-    PostgreSQL server versions 7.4-10 are supported by psycopg2 v2.7.5.
+
+    Psycopg2 v2.7.5 supports Python versions 2.6-2.7 and 3.2-3.6, and
+    PostgreSQL server versions 7.4-10.  Python 3.7 is unsupported, but I had no
+    problems using it.
+
   + For connecting to IBM DB2, my code uses the ibm_db library, which is
     available on PyPI.  The ibm_db library library requires Microsoft Visual
     C++ 14, which is available as "Microsoft Visual C++ Build Tools" on
     http://landinghub.visualstudio.com/visual-cpp-build-tools.
-    I can not find which Python versions are supported by ibm_db v2.0.9, but I
-    had no problems installing it in Python versions 2.7 and 3.3-3.7.
+
+    I can not find which Python versions are supported by ibm_db v2.0.9.  I had
+    no problems installing it in Python versions 2.7 and 3.3-3.7.
+
   + For connecting to Microsoft Access 2016, my code uses the pyodbc library,
     which is available on PyPI.  The pyodbc library requires the "Microsoft
     Access Database Engine 2016 Redistributable", which is available from
     https://www.microsoft.com/en-us/download/details.aspx?id=54920.
-    Python versions 2.7 and 3.4-3.6 are supported by pyodbc v4.0.24.
+
+    Pyodbc v4.0.24 supports Python versions 2.7 and 3.4-3.6.
+
   + For connecting to SQLite, my code uses the sqlite3 library, part of the
     Python Standard Library.
+
     The sqlite3 library has been in the Standard Library since Python 2.5.
 
 SAMPLE DATABASES TO TEST THIS PROGRAM ON:
@@ -118,7 +131,7 @@ SAMPLE DATABASES TO TEST THIS PROGRAM ON:
     contact information.
 
   The MySQL sample database:
-    - Can be downloaded from https://1drv.ms/u/s!AieKzIY33GmRgcExQPbjBZ62X4tPCQ.
+    - Available at https://1drv.ms/u/s!AieKzIY33GmRgcExQPbjBZ62X4tPCQ.
     - MySQL 5.5.60 on an Oracle VirtualBox virtual machine running Debian 8.11
       Jessie.  I've installed LXDE desktop 0.99.0-1 on it.
     - This virtual machine is based on a virtual machine created by Turnkey
@@ -126,7 +139,7 @@ SAMPLE DATABASES TO TEST THIS PROGRAM ON:
       https://www.turnkeylinux.org/mysql.
 
   The Microsoft SQL Server sample database:
-    - Can be downloaded from https://1drv.ms/u/s!AieKzIY33GmRgcQXIZ9mvqPNcEqHdw.
+    - Available at https://1drv.ms/u/s!AieKzIY33GmRgcQXIZ9mvqPNcEqHdw.
     - Microsoft SQL Server 2017 Express Edition on an Oracle VirtualBox virtual
       machine running Ubuntu 16.04.3 server.  No desktop environment, command
       line only.
@@ -134,7 +147,7 @@ SAMPLE DATABASES TO TEST THIS PROGRAM ON:
       downloaded from https://www.ubuntu.com/download/server.
 
   The PostgreSQL sample database:
-    - Can be downloaded from https://1drv.ms/u/s!AieKzIY33GmRgcEwOQinckQ9Buyk9w.
+    - Available at https://1drv.ms/u/s!AieKzIY33GmRgcEwOQinckQ9Buyk9w.
     - PostgreSQL 9.4.19 on an Oracle VirtualBox virtual machine running Debian
       8.11 Jessie.  I've installed LXDE desktop 0.99.0-1 on it.
     - This virtual machine is based on a virtual machine created by Turnkey

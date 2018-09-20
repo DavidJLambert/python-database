@@ -1,7 +1,9 @@
 # Byte-compiled / optimized / DLL files
-.idea/
 .pytest_cache/
 __pycache__/
-junk/
 *.py[cod]
 *$py.class
+
+# Other stuff
+.idea/
+junk/
