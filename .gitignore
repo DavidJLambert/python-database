@@ -1,10 +1,10 @@
 # Byte-compiled / optimized / DLL files
+.idea/
+.pytest_cache/
 __pycache__/
+junk/
 *.py[cod]
 *$py.class
-pytest/testUniversalClientMonkeyPatch.py
+test/testUniversalClientMonkeyPatch.py
 databases/urls.txt
 IDEAS.txt
-
-# Other
-junk
