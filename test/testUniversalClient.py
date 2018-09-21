@@ -53,12 +53,6 @@ class TestClass(object):
         with pytest.raises(ExceptionFatal):
             raise ExceptionFatal('Hello')
 
-    def test_validate_file_path(self):
-        validate_file_path('C:\Windows\System32')
-        assert validate_file_path('C:\Windows\System32') is None
-        with pytest.raises(FileNotFoundError):
-            validate_file_path('Nonsense')
-
     def test_main(self, capsys, monkeypatch):
         """Would be great to simply call main() and feed series of commands
         through monkeypatch, but could not figure out how to do that."""
