@@ -13,7 +13,7 @@ AUTHOR:
   David J. Lambert
 
 DATE:
-  September 19, 2018
+  September 20, 2018
 
 PURPOSE:
   A sample of my Python coding, to demonstrate that I can write decent Python,
@@ -168,12 +168,16 @@ import os.path
 import sys
 import traceback
 import getpass
+# Parent classes of all database exceptions (DB-API 2.0, see PEP 249).
+from sqlite3 import DatabaseError, InterfaceError
 
 # -------- PYTHON VERSION STUFF
 
 if sys.version_info[0] == 2:
     input = raw_input
-    FileNotFoundError = IOError
+    Dont_Catch = (Warning, StopIteration)
+else:
+    Dont_Catch = (Warning, StopIteration, StopAsyncIteration)
 
 # -------- CREATE AND INITIALIZE VARIABLES
 
@@ -181,10 +185,10 @@ if sys.version_info[0] == 2:
 default_ports = [1521, 3306, 1433, 5432, 50000, 0, 0]
 db_types = ['oracle', 'mysql', 'sql server', 'postgresql', 'db2', 'access',
             'sqlite']
-connection_libs = ['cx_Oracle', 'pymysql', 'pymssql', 'psycopg2', 'ibm_db',
-                   'pyodbc', 'sqlite3']
+db_libs = ['cx_Oracle', 'pymysql', 'pymssql', 'psycopg2', 'ibm_db', 'pyodbc',
+           'sqlite3']
 
-map_type_to_lib = dict(zip(db_types, connection_libs))
+map_type_to_lib = dict(zip(db_types, db_libs))
 map_type_to_port = dict(zip(db_types, default_ports))
 
 # All db types.
@@ -282,12 +286,16 @@ def main():
             print("\nStarting over at your request.")
         except ExceptionUserAnotherDB:
             pass
+        except Dont_Catch:
+            # Catch and re-raise, so that later except clauses don't get these.
+            raise
         except Exception:
             # Yes, I know, overly broad.  Just want to see stack trace.
             do_stacktrace()
             print("\nWill continue, if possible.")
         finally:
             disconnect_db(db_type, connection, cursor)
+    return
 
 
 def ask_for_db_type():
@@ -304,20 +312,7 @@ def ask_for_db_type():
     for i in range(7):
         prompt += "\n(%d) %s" % (i+1, db_types[i])
     prompt += ", or\n(Q) to Quit program: "
-    while True:
-        key = ask_end_user(prompt)
-        if not key:
-            print("\n## You did not enter anything. ##")
-        elif key.isdigit():
-            key = int(key)
-            if key-1 in range(len(db_types)):
-                db_type = db_types[key-1]
-                print("\n## Selected %s. ##" % db_type)
-                break
-            else:
-                print("\n## '%d' is an invalid choice. ##" % key)
-        else:
-            print("\n## '%s' is an invalid choice. ##" % key)
+    db_type = ask_and_validate_int(prompt, msg='choice', name='db_type')
     return db_type
 
 
@@ -339,39 +334,21 @@ def ask_for_db_location(db_type):
               "\n(Q) to Quit program, or" +
               "\n(S) to Start over: ")
     if db_type in db_local:
-        while True:
-            db_path = ask_end_user(prompt)
-            if os.path.exists(db_path):
-                break
-            else:
-                print("\n## '%s' is not a valid path. ##" % db_path)
+        msg = "\n## '%s' is not a valid path. ##"
+        db_path = ask_and_validate_str(prompt, os.path.exists, msg,
+                                       msg_arg=True)
     else:
         prompt = ("\nEnter the db server's host name or IP address," +
                   "\n(Q) to Quit program, or" +
                   "\n(S) to Start over: ")
-        while True:
-            db_host = ask_end_user(prompt)
-            if db_host:
-                break
-            else:
-                print("\n## You did not enter a db host. ##")
+        msg = "\n## You did not enter a db host. ##"
+        db_host = ask_and_validate_str(prompt, echo, msg, msg_arg=False)
 
         default = "%s default is %d)," % (db_type, map_type_to_port[db_type])
         prompt = ("\nEnter the port (the " + default +
                   "\n(Q) to Quit program, or" +
                   "\n(S) to Start over: ")
-        while True:
-            db_port = ask_end_user(prompt)
-            if not db_port:
-                print("\n## You did not enter a port. ##")
-            elif db_port.isdigit():
-                db_port = int(db_port)
-                if db_port in range(1, 65536):
-                    break
-                else:
-                    print("\n## '%d' is an invalid port. ##" % db_port)
-            else:
-                print("\n## '%s' is an invalid port. ##" % db_port)
+        db_port = ask_and_validate_int(prompt, msg='port', name='db_port')
     return db_host, db_port, db_path
 
 
@@ -390,12 +367,8 @@ def ask_for_db_instance(db_type):
         prompt = ("\nEnter the db instance," +
                   "\n(Q) to Quit program, or" +
                   "\n(S) to Start over: ")
-        while True:
-            db_instance = ask_end_user(prompt)
-            if db_instance:
-                break
-            else:
-                print("\n## You did not enter a db instance. ##")
+        msg = "\n## You did not enter a db instance. ##"
+        db_instance = ask_and_validate_str(prompt, echo, msg, msg_arg=False)
     return db_instance
 
 
@@ -422,7 +395,7 @@ def ask_for_db_login(db_type):
             else:
                 print("\n## You did not enter a username. ##")
         prompt = "\nEnter %s's password: " % db_user  # Accept anything.
-        db_password = getpass.getpass(prompt=prompt)  # Doesn't work in PyCharm!
+        db_password = getpass.getpass(prompt=prompt)  # Hangs in PyCharm!
     return db_user, db_password
 
 
@@ -465,7 +438,6 @@ def connect_to_db(db_type, db_host, db_port, db_instance, db_path, db_user,
     Raises:
         ExceptionUserAnotherDB, NotImplementedError.
     """
-
     # Dynamic import of connection library for current db type.
     db_library = __import__(map_type_to_lib[db_type])
 
@@ -496,7 +468,6 @@ def connect_to_db(db_type, db_host, db_port, db_instance, db_path, db_user,
     else:
         connection = db_library.connect(db_host, db_user, db_password,
                                         db_instance, db_port)
-
     return connection
 
 
@@ -515,12 +486,12 @@ def run_sql(connection, sql):
         cursor = connection.cursor()
         cursor.execute(sql)
         return cursor
-    except Exception as e:
+    except (DatabaseError, InterfaceError) as e:
         # Problem executing current SQL, so just get another SQL statement.
-        # TODO improve exception handling
         print()
         print(e)
         raise ExceptionUserNewSQL()
+    return
 
 
 def print_response(cursor, sql):
@@ -580,7 +551,6 @@ def print_response(cursor, sql):
             ask_end_user(prompt).upper()
     else:  # Not a CRUD statement.  Have not thought about that situation.
         print("\n## %d rows affected. ##" % rowcount)
-
     return
 
 
@@ -615,9 +585,7 @@ def do_stacktrace():
         none.
     """
     print()
-    exc_type, exc_value, exc_traceback = sys.exc_info()
-    traceback.print_exception(exc_type, exc_value, exc_traceback, limit=None,
-                              file=sys.stdout)
+    traceback.print_exception(*sys.exc_info(), limit=None, file=sys.stdout)
     return
 
 
@@ -625,7 +593,7 @@ def ask_end_user(prompt):
     """ Only place for end-user input, except in ask_for_users_login (getpass).
 
     Args:
-        prompt (string): prompt passed from calling function.
+        prompt (string): prompt to present to end-user for input.
     Returns:
         response (string): response to prompt.  Always string, never integer.
     Raises:
@@ -642,8 +610,81 @@ def ask_end_user(prompt):
         raise ExceptionUserAnotherDB()
     elif u_response == "N":
         raise ExceptionUserNewSQL()
-
     return response
+
+
+def echo(arg):
+    """ Function that returns argument.
+
+    Args:
+        Any object.
+    Returns:
+        Argument.
+    Raises:
+        none.
+    """
+    return arg
+
+
+def ask_and_validate_str(prompt, test, msg, msg_arg):
+    """ Ask end-user for string input, test input.  If test fails, ask again.
+
+    Args:
+        prompt (string): prompt to present to end-user for input.
+        test (function): response must pass test.  test(response) == True
+        msg (string): message to end-user if test fails.
+        msg_arg (boolean): whether or not msg contains the end-user response.
+    Returns:
+        response (string): validated end-user response to "prompt" argument.
+    Raises:
+        none.
+    """
+    while True:
+        response = ask_end_user(prompt)
+        if test(response):
+            break
+        elif msg_arg:
+            print(msg % response)
+        else:
+            print(msg)
+    return response
+
+
+def ask_and_validate_int(prompt, msg, name):
+    """ Ask end-user for integer input, test input.  If test fails, ask again.
+
+    Args:
+        prompt (string): prompt to present to end-user for input.
+        msg (string): part of message to end-user if test fails.
+        name (string): name of input sought.  For selecting functionality.
+    Returns:
+        response (int or str): validated end-user response to "prompt".
+    Raises:
+        none.
+    """
+    while True:
+        response = ask_end_user(prompt)
+        if not response:
+            print("\n## You did not enter anything. ##")
+        elif response.isdigit():
+            response = int(response)
+            if name == 'db_port':
+                test = response in range(1, 65536)
+            elif name == 'db_type':
+                test = (response-1) in range(len(db_types))
+            else:
+                raise Exception("ask_and_validate_int: invalid name %s." % name)
+            if test:
+                if name == 'db_type':
+                    response = db_types[response-1]
+                    print("\n## Selected %s. ##" % response)
+                break
+            else:
+                print("\n## '%d' is an invalid %s. ##" % (response, msg))
+        else:
+            print("\n## '%s' is an invalid %s. ##" % (response, msg))
+    return response
+
 
 # -------- IF __NAME__ ....
 

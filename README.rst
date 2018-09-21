@@ -11,7 +11,7 @@ AUTHOR:
   David J. Lambert
 
 DATE:
-  September 19, 2018
+  September 20, 2018
 
 PURPOSE:
   A sample of my Python coding, to demonstrate that I can write decent Python,
