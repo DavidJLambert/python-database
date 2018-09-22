@@ -183,7 +183,6 @@ else:
 # -------- CREATE AND INITIALIZE VARIABLES
 
 # Execution environment.
-
 cmd_line = 1
 pycharm = 2
 if sys.stdin.isatty():
@@ -195,8 +194,7 @@ elif 'PYCHARM_HOSTED' in os.environ:
 else:
     # Parent process name (cmd.exe, bash.exe, pycharm64.exe, etc.)
     parent_proc = psutil_Process(os.getpid()).parent().name()
-    print("UniversalClient launched by %s.  If getpass hangs, that's why." %
-          parent_proc)
+    print('Program launched by %s.  May make getpass hang.' % parent_proc)
 
 # Supported relational db types, in descending order in popularity.
 default_ports = [1521, 3306, 1433, 5432, 50000, 0, 0]
@@ -297,10 +295,10 @@ def main():
             # Sender already announced what the problem is.
             break
         except ExceptionUserQuit:
-            print("\nQuitting at your request.")
+            print('\nQuitting at your request.')
             break
         except ExceptionUserStartOver:
-            print("\nStarting over at your request.")
+            print('\nStarting over at your request.')
         except ExceptionUserAnotherDB:
             pass
         except Dont_Catch:
@@ -309,7 +307,7 @@ def main():
         except Exception:
             # Yes, I know, overly broad.  Just want to see stack trace.
             do_stacktrace()
-            print("\nWill continue, if possible.")
+            print('\nWill continue, if possible.')
         finally:
             disconnect_db(db_type, connection, cursor)
     return
@@ -325,11 +323,11 @@ def ask_for_db_type():
     Raises:
         none.
     """
-    prompt = "\nEnter the number for your db type:"
+    prompt = '\nEnter the number for your db type:'
     for i in range(7):
-        prompt += "\n(%d) %s" % (i+1, db_types[i])
-    prompt += ", or\n(Q) to Quit program: "
-    db_type = ask_and_validate_int(prompt, msg='choice', name='db_type')
+        prompt += '\n(%d) %s' % (i+1, db_types[i])
+    prompt += ', or\n(Q) to Quit program: '
+    db_type = ask_and_check_int(prompt, msg='choice', name='db_type')
     return db_type
 
 
@@ -348,23 +346,23 @@ def ask_for_db_location(db_type):
     db_host = db_path = ''
     db_port = 0
     prompt = ("\nEnter your db file's full path," +
-              "\n(Q) to Quit program, or" +
-              "\n(S) to Start over: ")
+              '\n(Q) to Quit program, or' +
+              '\n(S) to Start over: ')
     if db_type in db_local:
         msg = "\n## '%s' is not a valid path. ##"
-        db_path = ask_and_validate_str(prompt, os.path.exists, msg, msg_arg=True)
+        db_path = ask_and_check_str(prompt, os.path.exists, msg, msg_arg=True)
     else:
         prompt = ("\nEnter the db server's host name or IP address," +
-                  "\n(Q) to Quit program, or" +
-                  "\n(S) to Start over: ")
-        msg = "\n## You did not enter a db host. ##"
-        db_host = ask_and_validate_str(prompt, echo, msg, msg_arg=False)
+                  '\n(Q) to Quit program, or' +
+                  '\n(S) to Start over: ')
+        msg = '\n## You did not enter a db host. ##'
+        db_host = ask_and_check_str(prompt, echo, msg, msg_arg=False)
 
-        default = "%s default is %d)," % (db_type, map_type_to_port[db_type])
-        prompt = ("\nEnter the port (the " + default +
-                  "\n(Q) to Quit program, or" +
-                  "\n(S) to Start over: ")
-        db_port = ask_and_validate_int(prompt, msg='port', name='db_port')
+        default = '%s default is %d),' % (db_type, map_type_to_port[db_type])
+        prompt = ('\nEnter the port (the ' + default +
+                  '\n(Q) to Quit program, or' +
+                  '\n(S) to Start over: ')
+        db_port = ask_and_check_int(prompt, msg='port', name='db_port')
     return db_host, db_port, db_path
 
 
@@ -380,11 +378,11 @@ def ask_for_db_instance(db_type):
     """
     db_instance = ''
     if db_type in db_has_instance:
-        prompt = ("\nEnter the db instance," +
-                  "\n(Q) to Quit program, or" +
-                  "\n(S) to Start over: ")
-        msg = "\n## You did not enter a db instance. ##"
-        db_instance = ask_and_validate_str(prompt, echo, msg, msg_arg=False)
+        prompt = ('\nEnter the db instance,' +
+                  '\n(Q) to Quit program, or' +
+                  '\n(S) to Start over: ')
+        msg = '\n## You did not enter a db instance. ##'
+        db_instance = ask_and_check_str(prompt, echo, msg, msg_arg=False)
     return db_instance
 
 
@@ -401,21 +399,22 @@ def ask_for_db_login(db_type):
     """
     db_user = db_password = ''
     if db_type in db_has_login:
-        prompt = ("\nEnter the db user name," +
-                  "\n(Q) to Quit program, or" +
-                  "\n(S) to Start over: ")
-        msg = "\n## You did not enter a username. ##"
-        db_user = ask_and_validate_str(prompt, echo, msg, msg_arg=False)
+        prompt = ('\nEnter the db user name,' +
+                  '\n(Q) to Quit program, or' +
+                  '\n(S) to Start over: ')
+        msg = '\n## You did not enter a username. ##'
+        db_user = ask_and_check_str(prompt, echo, msg, msg_arg=False)
 
         prompt = "\nEnter %s's password: " % db_user  # Accept anything.
         if exe_env == pycharm:
-            # Getpass is dicey, hangs in PyCharm, bypasses subprocess.run.
+            # In PyCharm, getpass hangs & bypasses subprocess.run.
+            # Do regular prompt for password, meaning it gets echoed.
             db_password = ask_end_user(prompt)
         elif exe_env == cmd_line:
             # Running interactively, OK to use getpass.
             db_password = getpass(prompt=prompt)
         else:
-            raise ValueError("ask_for_db_login: invalid exe_env %d." % exe_env)
+            raise ValueError('ask_for_db_login: invalid exe_env %d.' % exe_env)
     return db_user, db_password
 
 
@@ -429,11 +428,11 @@ def ask_for_sql():
     Raises:
         none.
     """
-    prompt = ("\nEnter the SQL to execute in this db," +
-              "\n(Q) to Quit program, or" +
-              "\n(A) to use Another db: ")
-    msg = "\n## You did not enter any SQL. ##"
-    sql = ask_and_validate_str(prompt, echo, msg, msg_arg=False)
+    prompt = ('\nEnter the SQL to execute in this db,' +
+              '\n(Q) to Quit program, or' +
+              '\n(A) to use Another db: ')
+    msg = '\n## You did not enter any SQL. ##'
+    sql = ask_and_check_str(prompt, echo, msg, msg_arg=False)
     return sql
 
 
@@ -458,25 +457,25 @@ def connect_to_db(db_type, db_host, db_port, db_instance, db_path, db_user,
     db_library = __import__(map_type_to_lib[db_type])
 
     conn_str = ''
-    if db_type in ("mysql", "sql server"):
+    if db_type in ('mysql', 'sql server'):
         pass
-    elif db_type == "oracle":
-        conn_str = ("%s/%s@%s:%d/%s" %
+    elif db_type == 'oracle':
+        conn_str = ('%s/%s@%s:%d/%s' %
                     (db_user, db_password, db_host, db_port, db_instance))
-    elif db_type == "postgresql":
+    elif db_type == 'postgresql':
         conn_str = ("host='%s' dbname='%s' user='%s' password='%s' port='%d'"
                     % (db_host, db_instance, db_user, db_password, db_port))
-    elif db_type == "db2":
-        conn_str = ("DATABASE=%s;HOSTNAME=%s;PORT=%s;PROTOCOL=%s;UID=%s;PWD=%s;"
+    elif db_type == 'db2':
+        conn_str = ('DATABASE=%s;HOSTNAME=%s;PORT=%s;PROTOCOL=%s;UID=%s;PWD=%s;'
                     % (db_instance, db_host, db_port, 'TCPIP', db_user,
                        db_password))
-    elif db_type == "access":
-        conn_str = (r"DRIVER={Microsoft Access Driver (*.mdb, *.accdb)};DBQ=%s;"
+    elif db_type == 'access':
+        conn_str = (r'DRIVER={Microsoft Access Driver (*.mdb, *.accdb)};DBQ=%s;'
                     % db_path)
-    elif db_type == "sqlite":
+    elif db_type == 'sqlite':
         conn_str = db_path
     else:
-        print("Unknown db type %s, aborting." % db_type)
+        print('Unknown db type %s, aborting.' % db_type)
         raise ExceptionUserAnotherDB()
 
     if db_type in db_uses_conn_str:
@@ -525,20 +524,20 @@ def print_response(cursor, sql):
     rowcount = cursor.rowcount
 
     if cursor is None:
-        raise ExceptionFatal("Cursor is None.")
-    elif sql_type in ("INSERT", "UPDATE", "DELETE"):
-        print("\n## %d rows affected. ##" % rowcount)
-    elif sql_type == "SELECT":
+        raise ExceptionFatal('Cursor is None.')
+    elif sql_type in ('INSERT', 'UPDATE', 'DELETE'):
+        print('\n## %d rows affected. ##' % rowcount)
+    elif sql_type == 'SELECT':
         # Rowcount useless in selects, always -1: sqlite, access
         # Rowcount = total number rows selected: postgresql
         rowcount = cursor.rowcount
         if rowcount >= 0:
-            print("\n## A total of %d records were selected. ##" % rowcount)
+            print('\n## A total of %d records were selected. ##' % rowcount)
         # Print row of column names
         fields = []
         for row in cursor.description:
             fields.append(row[0])
-        print("\nColumns:\t" + "\t".join(fields))
+        print('\nColumns:\t' + '\t'.join(fields))
 
         # Fetch and print rows in batches of ARRAY_SIZE.
         count = 0
@@ -547,26 +546,26 @@ def print_response(cursor, sql):
             some_rows = cursor.fetchmany(ARRAY_SIZE)
             if len(some_rows) == 0 or some_rows is None:
                 if count == 0:
-                    print("\nNo rows.")
+                    print('\nNo rows.')
                 else:
-                    print("\nNo more rows.")
+                    print('\nNo more rows.')
                 break
             # Now print this batch of rows.
             for row in some_rows:
                 count += 1
                 iter_ = [str(item) for item in row]
-                print("Row %d:\t" % count + "\t".join(iter_))
+                print('Row %d:\t' % count + '\t'.join(iter_))
             if len(some_rows) < ARRAY_SIZE:
-                print("\nNo more rows.")
+                print('\nNo more rows.')
                 break
             # Maybe print another batch.
-            prompt = ("\nHit Enter to see rows %d-%d," % (count+1,
+            prompt = ('\nHit Enter to see rows %d-%d,' % (count+1,
                       count+ARRAY_SIZE) +
-                      "\n(Q) to Quit program, or" +
-                      "\n(N) for No more rows: ")
+                      '\n(Q) to Quit program, or' +
+                      '\n(N) for No more rows: ')
             ask_end_user(prompt).upper()
     else:  # Not a CRUD statement.  Have not thought about that situation.
-        print("\n## %d rows affected. ##" % rowcount)
+        print('\n## %d rows affected. ##' % rowcount)
     return
 
 
@@ -618,13 +617,13 @@ def ask_end_user(prompt):
     """
     response = input(prompt).strip()
     u_response = response.upper()
-    if u_response == "Q":
+    if u_response == 'Q':
         raise ExceptionUserQuit()
-    elif u_response == "S":
+    elif u_response == 'S':
         raise ExceptionUserStartOver()
-    elif u_response == "A":
+    elif u_response == 'A':
         raise ExceptionUserAnotherDB()
-    elif u_response == "N":
+    elif u_response == 'N':
         raise ExceptionUserNewSQL()
     return response
 
@@ -642,7 +641,7 @@ def echo(arg):
     return arg
 
 
-def ask_and_validate_str(prompt, test, msg, msg_arg):
+def ask_and_check_str(prompt, test, msg, msg_arg):
     """ Ask end-user for string input, test input.  If test fails, ask again.
 
     Args:
@@ -666,7 +665,7 @@ def ask_and_validate_str(prompt, test, msg, msg_arg):
     return response
 
 
-def ask_and_validate_int(prompt, msg, name):
+def ask_and_check_int(prompt, msg, name):
     """ Ask end-user for integer input, test input.  If test fails, ask again.
 
     Args:
@@ -681,7 +680,7 @@ def ask_and_validate_int(prompt, msg, name):
     while True:
         response = ask_end_user(prompt)
         if not response:
-            print("\n## You did not enter anything. ##")
+            print('\n## You did not enter anything. ##')
         elif response.isdigit():
             response = int(response)
             if name == 'db_port':
@@ -689,12 +688,12 @@ def ask_and_validate_int(prompt, msg, name):
             elif name == 'db_type':
                 test = (response-1) in range(len(db_types))
             else:
-                raise ValueError("ask_and_validate_int: invalid name %s." %
+                raise ValueError('ask_and_check_int: invalid name %s.' %
                                  name)
             if test:
                 if name == 'db_type':
                     response = db_types[response-1]
-                    print("\n## Selected %s. ##" % response)
+                    print('\n## Selected %s. ##' % response)
                 break
             else:
                 print("\n## '%d' is an invalid %s. ##" % (response, msg))
@@ -706,5 +705,5 @@ def ask_and_validate_int(prompt, msg, name):
 # -------- IF __NAME__ ....
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     main()
