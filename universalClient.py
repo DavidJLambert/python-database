@@ -1,4 +1,5 @@
 """ universalClient.py
+https://github.com/David-J-Lambert/Python-Universal-DB-Client
 
 Universal Database Client
 -------------------------
@@ -7,13 +8,13 @@ SUMMARY:
   Command-line universal database client.
 
 VERSION:
-  0.1.0
+  0.1.1
 
 AUTHOR:
   David J. Lambert
 
 DATE:
-  September 20, 2018
+  September 22, 2018
 
 PURPOSE:
   A sample of my Python coding, to demonstrate that I can write decent Python,
@@ -181,20 +182,6 @@ else:
     Dont_Catch = (Warning, StopIteration, StopAsyncIteration)
 
 # -------- CREATE AND INITIALIZE VARIABLES
-
-# Execution environment.
-cmd_line = 1
-pycharm = 2
-if sys.stdin.isatty():
-    # Running on a command line (cmd.exe, bash.exe, etc.)
-    exe_env = cmd_line
-elif 'PYCHARM_HOSTED' in os.environ:
-    # Running in PyCharm
-    exe_env = pycharm
-else:
-    # Parent process name (cmd.exe, bash.exe, pycharm64.exe, etc.)
-    parent_proc = psutil_Process(os.getpid()).parent().name()
-    print('Program launched by %s.  May make getpass hang.' % parent_proc)
 
 # Supported relational db types, in descending order in popularity.
 default_ports = [1521, 3306, 1433, 5432, 50000, 0, 0]
@@ -406,15 +393,14 @@ def ask_for_db_login(db_type):
         db_user = ask_and_check_str(prompt, echo, msg, msg_arg=False)
 
         prompt = "\nEnter %s's password: " % db_user  # Accept anything.
-        if exe_env == pycharm:
-            # In PyCharm, getpass hangs & bypasses subprocess.run.
-            # Do regular prompt for password, meaning it gets echoed.
-            db_password = ask_end_user(prompt)
-        elif exe_env == cmd_line:
-            # Running interactively, OK to use getpass.
-            db_password = getpass(prompt=prompt)
+        if sys.stdin.isatty():
+            # Using terminal, OK to use getpass.
+            db_password = getpass(prompt)
         else:
-            raise ValueError('ask_for_db_login: invalid exe_env %d.' % exe_env)
+            # Use "input" (echoes password).  Getpass detects Eclipse & IDLE,
+            # warns and uses "input", getpass doesn't detect PyCharm & hangs,
+            # who knows what other environments do, just avoid the whole mess.
+            db_password = ask_end_user(prompt)
     return db_user, db_password
 
 

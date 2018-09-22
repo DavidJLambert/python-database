@@ -2,16 +2,17 @@ Universal Database Client
 -------------------------
 
 SUMMARY:
-  Command-line universal database client.
+  - Command-line universal database client.
+  - https://github.com/David-J-Lambert/Python-Universal-DB-Client
 
 VERSION:
-  0.1.0
+  0.1.1
 
 AUTHOR:
   David J. Lambert
 
 DATE:
-  September 20, 2018
+  September 22, 2018
 
 PURPOSE:
   A sample of my Python coding, to demonstrate that I can write decent Python,

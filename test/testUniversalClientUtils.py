@@ -1,3 +1,19 @@
+""" testUniversalClientUtils.py
+https://github.com/David-J-Lambert/Python-Universal-DB-Client
+
+Summary: For testUniversalClientSqlite and testUniversalClientMysql.
+Version: 0.1.1
+Author: David J. Lambert
+Date: September 22, 2018
+
+Purpose:  testUniversalClient.py does not test function main() in
+universalClient.py as is, it skips all but one of the executions of input().
+
+This module, testUniversalClientMysql.py, tests main() as is for Mysql, with
+all executions of input().  It is not nearly as elegant, but it is much simpler
+than testUniversalClient.py.
+"""
+
 import sys
 import os
 from subprocess import run, PIPE
@@ -39,20 +55,20 @@ else:
 
 
 def do_comparison(result, actual, expected):
-    if result.returncode != 0:
-        print('result.returncode = %s' % str(result.returncode))
-    assert result.returncode == 0
-    if result.stderr:
-        print('result.stderr = %s' % str(result.stderr))
-    assert result.stderr == ''
-
     # Compare line by line, to make troubleshooting MUCH easier.
     actual = actual.splitlines()
     expected = expected.splitlines()
-
     for line in range(len(actual)):
         if actual[line] != expected[line]:
             print('Actual:   BEGIN%sEND' % actual[line])
             print('Expected: BEGIN%sEND' % expected[line])
         assert actual[line] == expected[line]
+
+    if result.returncode != 0:
+        print('result.returncode = %s' % str(result.returncode))
+    assert result.returncode == 0
+
+    if result.stderr:
+        print('result.stderr = %s' % str(result.stderr))
+    assert result.stderr == ''
     return
