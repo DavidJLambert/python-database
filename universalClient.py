@@ -164,12 +164,13 @@ SAMPLE DATABASES TO TEST THIS PROGRAM ON:
 # -------- IMPORTS
 
 from __future__ import print_function
-import os.path
+import os
 import sys
-import traceback
-import getpass
+from traceback import print_exception
+from getpass import getpass
 # Parent classes of all database exceptions (DB-API 2.0, see PEP 249).
 from sqlite3 import DatabaseError, InterfaceError
+from psutil import Process as psutil_Process
 
 # -------- PYTHON VERSION STUFF
 
@@ -180,6 +181,22 @@ else:
     Dont_Catch = (Warning, StopIteration, StopAsyncIteration)
 
 # -------- CREATE AND INITIALIZE VARIABLES
+
+# Execution environment.
+
+cmd_line = 1
+pycharm = 2
+if sys.stdin.isatty():
+    # Running on a command line (cmd.exe, bash.exe, etc.)
+    exe_env = cmd_line
+elif 'PYCHARM_HOSTED' in os.environ:
+    # Running in PyCharm
+    exe_env = pycharm
+else:
+    # Parent process name (cmd.exe, bash.exe, pycharm64.exe, etc.)
+    parent_proc = psutil_Process(os.getpid()).parent().name()
+    print("UniversalClient launched by %s.  If getpass hangs, that's why." %
+          parent_proc)
 
 # Supported relational db types, in descending order in popularity.
 default_ports = [1521, 3306, 1433, 5432, 50000, 0, 0]
@@ -335,8 +352,7 @@ def ask_for_db_location(db_type):
               "\n(S) to Start over: ")
     if db_type in db_local:
         msg = "\n## '%s' is not a valid path. ##"
-        db_path = ask_and_validate_str(prompt, os.path.exists, msg,
-                                       msg_arg=True)
+        db_path = ask_and_validate_str(prompt, os.path.exists, msg, msg_arg=True)
     else:
         prompt = ("\nEnter the db server's host name or IP address," +
                   "\n(Q) to Quit program, or" +
@@ -388,14 +404,18 @@ def ask_for_db_login(db_type):
         prompt = ("\nEnter the db user name," +
                   "\n(Q) to Quit program, or" +
                   "\n(S) to Start over: ")
-        while True:
-            db_user = ask_end_user(prompt)
-            if db_user:
-                break
-            else:
-                print("\n## You did not enter a username. ##")
+        msg = "\n## You did not enter a username. ##"
+        db_user = ask_and_validate_str(prompt, echo, msg, msg_arg=False)
+
         prompt = "\nEnter %s's password: " % db_user  # Accept anything.
-        db_password = getpass.getpass(prompt=prompt)  # Hangs in PyCharm!
+        if exe_env == pycharm:
+            # Getpass is dicey, hangs in PyCharm, bypasses subprocess.run.
+            db_password = ask_end_user(prompt)
+        elif exe_env == cmd_line:
+            # Running interactively, OK to use getpass.
+            db_password = getpass(prompt=prompt)
+        else:
+            raise ValueError("ask_for_db_login: invalid exe_env %d." % exe_env)
     return db_user, db_password
 
 
@@ -412,12 +432,8 @@ def ask_for_sql():
     prompt = ("\nEnter the SQL to execute in this db," +
               "\n(Q) to Quit program, or" +
               "\n(A) to use Another db: ")
-    while True:
-        sql = ask_end_user(prompt)
-        if sql:
-            break
-        else:
-            print("\n## You did not enter any SQL. ##")
+    msg = "\n## You did not enter any SQL. ##"
+    sql = ask_and_validate_str(prompt, echo, msg, msg_arg=False)
     return sql
 
 
@@ -585,7 +601,7 @@ def do_stacktrace():
         none.
     """
     print()
-    traceback.print_exception(*sys.exc_info(), limit=None, file=sys.stdout)
+    print_exception(*sys.exc_info(), limit=None, file=sys.stdout)
     return
 
 
@@ -673,7 +689,8 @@ def ask_and_validate_int(prompt, msg, name):
             elif name == 'db_type':
                 test = (response-1) in range(len(db_types))
             else:
-                raise Exception("ask_and_validate_int: invalid name %s." % name)
+                raise ValueError("ask_and_validate_int: invalid name %s." %
+                                 name)
             if test:
                 if name == 'db_type':
                     response = db_types[response-1]
