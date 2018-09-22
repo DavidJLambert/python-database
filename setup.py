@@ -9,7 +9,7 @@ from distutils.core import setup
 
 setup(
     name='universalClient',
-    version='0.1.0',
+    version='0.1.1',
     description='Python Universal Database Client',
     long_description=open('README.rst').read(),
     long_description_content_type='text/x-rst',
