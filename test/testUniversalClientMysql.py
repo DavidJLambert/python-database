@@ -1,10 +1,11 @@
 """ testUniversalClientMysql.py
 https://github.com/David-J-Lambert/Python-Universal-DB-Client
 
-Summary: Another Unit Test of universalClient.py.
-Version: 0.1.1
+Summary: Another Unit Test of universalClient.py.  Using MySQL as representing
+         enterprise databases on a server, with logins and instances.
+Version: 0.2.0
 Author: David J. Lambert
-Date: September 22, 2018
+Date: September 24, 2018
 
 Purpose:  testUniversalClient.py does not test function main() in
 universalClient.py as is, it skips all but one of the executions of input().
@@ -36,7 +37,7 @@ Enter the db user name,
 Enter root's password: '''
 
 count_str = '''
-## A total of 20000 records were selected. ##
+## 20000 records were selected. ##
 '''
 
 expected_out = (x.db_type_prompt + start_str + x.sql_prompt + count_str +

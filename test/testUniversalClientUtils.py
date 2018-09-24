@@ -2,9 +2,9 @@
 https://github.com/David-J-Lambert/Python-Universal-DB-Client
 
 Summary: For testUniversalClientSqlite and testUniversalClientMysql.
-Version: 0.1.1
+Version: 0.2.0
 Author: David J. Lambert
-Date: September 22, 2018
+Date: September 24, 2018
 
 Purpose:  testUniversalClient.py does not test function main() in
 universalClient.py as is, it skips all but one of the executions of input().
@@ -35,7 +35,7 @@ Enter the SQL to execute in this db,
 (A) to use Another db: '''
 
 end_str = '''
-Hit Enter to see rows 21-40,
+Hit Enter to see more rows,
 (Q) to Quit program, or
 (N) for No more rows: 
 Quitting at your request.

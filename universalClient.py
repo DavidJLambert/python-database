@@ -8,13 +8,13 @@ SUMMARY:
   Command-line universal database client.
 
 VERSION:
-  0.1.1
+  0.2.0
 
 AUTHOR:
   David J. Lambert
 
 DATE:
-  September 22, 2018
+  September 24, 2018
 
 PURPOSE:
   A sample of my Python coding, to demonstrate that I can write decent Python,
@@ -171,7 +171,6 @@ from traceback import print_exception
 from getpass import getpass
 # Parent classes of all database exceptions (DB-API 2.0, see PEP 249).
 from sqlite3 import DatabaseError, InterfaceError
-from psutil import Process as psutil_Process
 
 # -------- PYTHON VERSION STUFF
 
@@ -557,7 +556,7 @@ def print_response(cursor, sql):
                 break
 
             # Maybe print more rows.
-            prompt = ('\nHit Enter to see more rows' +
+            prompt = ('\nHit Enter to see more rows,' +
                       '\n(Q) to Quit program, or' +
                       '\n(N) for No more rows: ')
             ask_end_user(prompt).upper()

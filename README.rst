@@ -6,13 +6,13 @@ SUMMARY:
   - https://github.com/David-J-Lambert/Python-Universal-DB-Client
 
 VERSION:
-  0.1.1
+  0.2.0
 
 AUTHOR:
   David J. Lambert
 
 DATE:
-  September 22, 2018
+  September 24, 2018
 
 PURPOSE:
   A sample of my Python coding, to demonstrate that I can write decent Python,

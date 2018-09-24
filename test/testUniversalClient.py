@@ -2,9 +2,9 @@
 https://github.com/David-J-Lambert/Python-Universal-DB-Client
 
 Summary: Unit Test of universalClient.py.
-Version: 0.1.1
+Version: 0.2.0
 Author: David J. Lambert
-Date: September 22, 2018
+Date: September 24, 2018
 """
 
 from universalClient import *
@@ -55,9 +55,9 @@ class TestClass(object):
         with pytest.raises(ExceptionFatal):
             raise ExceptionFatal('Hello')
 
-    def test_main(self, capsys, monkeypatch):
+    def test_sqlite(self, capsys, monkeypatch):
         """Would be great to simply call main() and feed series of commands
-        through monkeypatch, but could not figure out how to do that."""
+        through monkeypatch/mock, but could not figure out how to do that."""
         with pytest.raises(ExceptionUserQuit):
             # Get default number of rows (20) from test database.
             connection = \
