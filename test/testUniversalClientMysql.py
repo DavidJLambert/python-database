@@ -52,8 +52,8 @@ db_user = 'root'
 db_password = 'password'
 sql_cmd = 'select * from CUSTOMERS;'
 quit_cmd = 'Q'
-cmds = ('%s\n'*8 % (db_type, db_host, db_port, db_instance, db_user,
-                    db_password, sql_cmd, quit_cmd))
+cmds = ('{}\n'*8).format(db_type, db_host, db_port, db_instance, db_user,
+                         db_password, sql_cmd, quit_cmd)
 result = x.run(x.run_me, input=cmds, stdout=x.PIPE, stderr=x.PIPE, text=True)
 
 actual_out = result.stdout

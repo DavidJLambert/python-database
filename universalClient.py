@@ -287,7 +287,7 @@ def main():
         except ExceptionUserStartOver:
             print('\nStarting over at your request.')
         except ExceptionUserAnotherDB:
-            pass
+            print('\nStarting another database at your request.')
         except Dont_Catch:
             # Catch and re-raise, so that later except clauses don't get these.
             raise
@@ -312,7 +312,7 @@ def ask_for_db_type():
     """
     prompt = '\nEnter the number for your db type:'
     for i in range(7):
-        prompt += '\n(%d) %s' % (i+1, db_types[i])
+        prompt += '\n({}) {}'.format(i+1, db_types[i])
     prompt += ', or\n(Q) to Quit program: '
     db_type = ask_and_check_int(prompt, msg='choice', name='db_type')
     return db_type
@@ -332,11 +332,11 @@ def ask_for_db_location(db_type):
     """
     db_host = db_path = ''
     db_port = 0
-    prompt = ("\nEnter your db file's full path," +
-              '\n(Q) to Quit program, or' +
-              '\n(S) to Start over: ')
     if db_type in db_local:
-        msg = "\n## '%s' is not a valid path. ##"
+        prompt = ("\nEnter your db file's full path," +
+                  '\n(Q) to Quit program, or' +
+                  '\n(S) to Start over: ')
+        msg = "\n## '{}' is not a valid path. ##"
         db_path = ask_and_check_str(prompt, os.path.exists, msg, msg_arg=True)
     else:
         prompt = ("\nEnter the db server's host name or IP address," +
@@ -345,8 +345,9 @@ def ask_for_db_location(db_type):
         msg = '\n## You did not enter a db host. ##'
         db_host = ask_and_check_str(prompt, echo, msg, msg_arg=False)
 
-        default = '%s default is %d),' % (db_type, map_type_to_port[db_type])
-        prompt = ('\nEnter the port (the ' + default +
+        default_port = '{} default is {}),'.format(db_type,
+                                                   map_type_to_port[db_type])
+        prompt = ('\nEnter the port (the ' + default_port +
                   '\n(Q) to Quit program, or' +
                   '\n(S) to Start over: ')
         db_port = ask_and_check_int(prompt, msg='port', name='db_port')
@@ -392,7 +393,7 @@ def ask_for_db_login(db_type):
         msg = '\n## You did not enter a username. ##'
         db_user = ask_and_check_str(prompt, echo, msg, msg_arg=False)
 
-        prompt = "\nEnter %s's password: " % db_user  # Accept anything.
+        prompt = "\nEnter {}'s password: ".format(db_user)  # Accept anything.
         if sys.stdin.isatty():
             # Using terminal, OK to use getpass.
             db_password = getpass(prompt)
@@ -446,22 +447,22 @@ def connect_to_db(db_type, db_host, db_port, db_instance, db_path, db_user,
     if db_type in ('mysql', 'sql server'):
         pass
     elif db_type == 'oracle':
-        conn_str = ('%s/%s@%s:%d/%s' %
-                    (db_user, db_password, db_host, db_port, db_instance))
+        z = '{}/{}@{}:{}/{}'
+        conn_str = z.format(db_user, db_password, db_host, db_port, db_instance)
     elif db_type == 'postgresql':
-        conn_str = ("host='%s' dbname='%s' user='%s' password='%s' port='%d'"
-                    % (db_host, db_instance, db_user, db_password, db_port))
+        z = "host='{}' dbname='{}' user='{}' password='{}' port='{}'"
+        conn_str = z.format(db_host, db_instance, db_user, db_password, db_port)
     elif db_type == 'db2':
-        conn_str = ('DATABASE=%s;HOSTNAME=%s;PORT=%s;PROTOCOL=%s;UID=%s;PWD=%s;'
-                    % (db_instance, db_host, db_port, 'TCPIP', db_user,
-                       db_password))
+        z = 'DATABASE={};HOSTNAME={};PORT={};PROTOCOL={};UID={};PWD={};'
+        conn_str = z.format(db_instance, db_host, db_port, 'TCPIP', db_user,
+                            db_password)
     elif db_type == 'access':
-        conn_str = (r'DRIVER={Microsoft Access Driver (*.mdb, *.accdb)};DBQ=%s;'
-                    % db_path)
+        z = r'DRIVER={Microsoft Access Driver (*.mdb, *.accdb)};DBQ={};'
+        conn_str = z.format(db_path)
     elif db_type == 'sqlite':
         conn_str = db_path
     else:
-        print('Unknown db type %s, aborting.' % db_type)
+        print('Unknown db type {}, aborting.'.format(db_type))
         raise ExceptionUserAnotherDB()
 
     if db_type in db_uses_conn_str:
@@ -489,10 +490,8 @@ def run_sql(connection, sql):
         return cursor
     except (DatabaseError, InterfaceError) as e:
         # Problem executing current SQL, so just get another SQL statement.
-        print()
-        print(e)
+        print('\n'+str(e))
         raise ExceptionUserNewSQL()
-    return
 
 
 def print_response(cursor, sql):
@@ -511,47 +510,61 @@ def print_response(cursor, sql):
 
     if cursor is None:
         raise ExceptionFatal('Cursor is None.')
-    elif sql_type in ('INSERT', 'UPDATE', 'DELETE'):
-        print('\n## %d rows affected. ##' % rowcount)
     elif sql_type == 'SELECT':
-        # Rowcount useless in selects, always -1: sqlite, access
-        # Rowcount = total number rows selected: postgresql
-        rowcount = cursor.rowcount
+        # SQLite, Access, SQL Server: Rowcount always -1. Oracle: Rowcount
+        # always 0.  PostgreSQL, MySQL: rowcount = number rows selected.
         if rowcount >= 0:
-            print('\n## A total of %d records were selected. ##' % rowcount)
-        # Print row of column names
-        fields = []
-        for row in cursor.description:
-            fields.append(row[0])
-        print('\nColumns:\t' + '\t'.join(fields))
+            print("\n## {} records were selected. ##".format(rowcount))
 
+        # Get column names
+        col_names = [item[0] for item in cursor.description]
         # Fetch and print rows in batches of ARRAY_SIZE.
         count = 0
         while True:
             # Fetch another batch of rows.
             some_rows = cursor.fetchmany(ARRAY_SIZE)
-            if len(some_rows) == 0 or some_rows is None:
-                if count == 0:
-                    print('\nNo rows.')
-                else:
-                    print('\nNo more rows.')
+            count += len(some_rows)
+
+            # Collect output.
+            lines = [[item for item in row] for row in some_rows]
+
+            # Find column widths that make columns straight & just wide enough.
+            col_sizes = [len(col_name) for col_name in col_names]
+            for line in lines:
+                col_sizes = [max(size, len(str(col)))
+                             for (size, col) in zip(col_sizes, line)]
+
+            # Format and print the column names.
+            formats = ['{{:^{}}}'.format(size) for size in col_sizes]
+            col_names_fmt = ' '.join(formats)
+            print('\n' + col_names_fmt.format(*col_names))
+
+            # Print a separator between the column names and the query output.
+            dashes = ['-'*col_size for col_size in col_sizes]
+            print(' '.join(dashes))
+
+            # Format and print the query output.
+            formats = ['{{:{}}}'.format(size) for size in col_sizes]
+            query_output_fmt = ' '.join(formats)
+            [print(query_output_fmt.format(*line)) for line in lines]
+
+            # If there's no more to print.
+            if count == 0:
+                print('\nNo rows.')
                 break
-            # Now print this batch of rows.
-            for row in some_rows:
-                count += 1
-                iter_ = [str(item) for item in row]
-                print('Row %d:\t' % count + '\t'.join(iter_))
-            if len(some_rows) < ARRAY_SIZE:
+            elif len(some_rows) < ARRAY_SIZE:
                 print('\nNo more rows.')
                 break
-            # Maybe print another batch.
-            prompt = ('\nHit Enter to see rows %d-%d,' % (count+1,
-                      count+ARRAY_SIZE) +
+
+            # Maybe print more rows.
+            prompt = ('\nHit Enter to see more rows' +
                       '\n(Q) to Quit program, or' +
                       '\n(N) for No more rows: ')
             ask_end_user(prompt).upper()
+    elif sql_type in ('INSERT', 'UPDATE', 'DELETE'):
+        print('\n## {} rows affected. ##'.format(rowcount))
     else:  # Not a CRUD statement.  Have not thought about that situation.
-        print('\n## %d rows affected. ##' % rowcount)
+        print('\n## {} rows affected. ##'.format(rowcount))
     return
 
 
@@ -645,7 +658,7 @@ def ask_and_check_str(prompt, test, msg, msg_arg):
         if test(response):
             break
         elif msg_arg:
-            print(msg % response)
+            print(msg.format(response))
         else:
             print(msg)
     return response
@@ -674,17 +687,16 @@ def ask_and_check_int(prompt, msg, name):
             elif name == 'db_type':
                 test = (response-1) in range(len(db_types))
             else:
-                raise ValueError('ask_and_check_int: invalid name %s.' %
-                                 name)
+                raise ValueError('ask_and_check_int: bad name {}.'.format(name))
             if test:
                 if name == 'db_type':
                     response = db_types[response-1]
-                    print('\n## Selected %s. ##' % response)
+                    print('\n## Selected {}. ##'.format(response))
                 break
             else:
-                print("\n## '%d' is an invalid %s. ##" % (response, msg))
+                print("\n## '{}' is an invalid {}. ##".format(response, msg))
         else:
-            print("\n## '%s' is an invalid %s. ##" % (response, msg))
+            print("\n## '{}' is an invalid {}. ##".format(response, msg))
     return response
 
 

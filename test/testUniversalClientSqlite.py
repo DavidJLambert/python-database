@@ -34,7 +34,7 @@ db_type = '7'
 db_path = r'C:\Coding\PyCharm\projects\Python-Universal-DB-Client\test\test.sqlite3'
 sql_cmd = 'select * from CUSTOMERS;'
 quit_cmd = 'Q'
-cmds = '%s\n'*4 % (db_type, db_path, sql_cmd, quit_cmd)
+cmds = ('{}\n'*4).format(db_type, db_path, sql_cmd, quit_cmd)
 
 result = x.run(x.run_me, input=cmds, stdout=x.PIPE, stderr=x.PIPE, text=True)
 

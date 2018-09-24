@@ -51,7 +51,7 @@ if os.path.exists(py_file):
 elif os.path.exists('../' + py_file):
     run_me = sys.executable + ' ../' + py_file
 else:
-    raise FileNotFoundError('Could not find %s.' % py_file)
+    raise FileNotFoundError('Could not find {}.'.format(py_file))
 
 
 def do_comparison(result, actual, expected):
@@ -60,15 +60,15 @@ def do_comparison(result, actual, expected):
     expected = expected.splitlines()
     for line in range(len(actual)):
         if actual[line] != expected[line]:
-            print('Actual:   BEGIN%sEND' % actual[line])
-            print('Expected: BEGIN%sEND' % expected[line])
+            print('Actual:   BEGIN{}END'.format(actual[line]))
+            print('Expected: BEGIN{}END'.format(expected[line]))
         assert actual[line] == expected[line]
 
     if result.returncode != 0:
-        print('result.returncode = %s' % str(result.returncode))
+        print('result.returncode = {}'.format(result.returncode))
     assert result.returncode == 0
 
     if result.stderr:
-        print('result.stderr = %s' % str(result.stderr))
+        print('result.stderr = {}'.format(result.stderr))
     assert result.stderr == ''
     return
