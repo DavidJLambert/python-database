@@ -1,15 +1,15 @@
 """ setup.py
 https://github.com/David-J-Lambert/Python-Universal-DB-Client
-Version: 0.2.0
+Version: 0.2.1
 Author: David J. Lambert
-Date: September 24, 2018
+Date: October 9, 2018
 """
 
 from distutils.core import setup
 
 setup(
     name='universalClient',
-    version='0.2.0',
+    version='0.2.1',
     description='Python Universal Database Client',
     long_description=open('README.rst').read(),
     long_description_content_type='text/x-rst',

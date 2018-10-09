@@ -8,13 +8,13 @@ SUMMARY:
   Command-line universal database client.
 
 VERSION:
-  0.2.0
+  0.2.1
 
 AUTHOR:
   David J. Lambert
 
 DATE:
-  September 24, 2018
+  October 9, 2018
 
 PURPOSE:
   A sample of my Python coding, to demonstrate that I can write decent Python,
@@ -23,15 +23,16 @@ PURPOSE:
 
 DESCRIPTION:
   This is a command-line program that asks an end-user for SQL to execute on 1
-  of 7 different relational databases:
+  of 7 different relational databases, ordered by popularity as ranked in 
+  https://pypl.github.io/DB.html in Oct 2018:
 
   - Oracle
   - MySQL
   - Microsoft SQL Server
   - PostgreSQL
+  - SQLite
   - IBM DB2 (untested)
   - Microsoft Access 2016
-  - SQLite
 
   I also provide sample databases to run this program against (see below).
   The code for DB2 is untested.
@@ -182,12 +183,24 @@ else:
 
 # -------- CREATE AND INITIALIZE VARIABLES
 
+db_port_class = 'db_port'
+db_type_class = 'db_type'
+
 # Supported relational db types, in descending order in popularity.
-default_ports = [1521, 3306, 1433, 5432, 50000, 0, 0]
-db_types = ['oracle', 'mysql', 'sql server', 'postgresql', 'db2', 'access',
-            'sqlite']
-db_libs = ['cx_Oracle', 'pymysql', 'pymssql', 'psycopg2', 'ibm_db', 'pyodbc',
-           'sqlite3']
+default_ports = [1521, 3306, 1433, 5432, 0, 50000, 0]
+
+# Database types.
+oracle = 'oracle'
+mysql = 'mysql'
+sql_server = 'sql server'
+postgresql = 'postgresql'
+db2 = 'db2'
+access = 'access'
+sqlite = 'sqlite'
+db_types = [oracle, mysql, sql_server, postgresql, sqlite, db2, access]
+
+db_libs = ['cx_Oracle', 'pymysql', 'pymssql', 'psycopg2', 'sqlite3', 'ibm_db',
+           'pyodbc']
 
 map_type_to_lib = dict(zip(db_types, db_libs))
 map_type_to_port = dict(zip(db_types, default_ports))
@@ -196,7 +209,7 @@ map_type_to_port = dict(zip(db_types, default_ports))
 all_dbs = set(db_types)
 
 # Db types in a file on the local machine.
-db_local = {'access', 'sqlite'}
+db_local = {access, sqlite}
 
 # Db types with a login.
 db_has_login = all_dbs - db_local
@@ -208,7 +221,7 @@ db_has_instance = db_has_login
 db_has_close = db_has_login
 
 # Db types that can use a connection string in the connect() method.
-db_uses_conn_str = ['access', 'sqlite', 'oracle', 'postgresql', 'db2']
+db_uses_conn_str = {access, sqlite, oracle, postgresql, db2}
 
 ARRAY_SIZE = 20
 
@@ -313,7 +326,7 @@ def ask_for_db_type():
     for i in range(7):
         prompt += '\n({}) {}'.format(i+1, db_types[i])
     prompt += ', or\n(Q) to Quit program: '
-    db_type = ask_and_check_int(prompt, msg='choice', name='db_type')
+    db_type = ask_and_check_int(prompt, msg='choice', name=db_type_class)
     return db_type
 
 
@@ -332,14 +345,14 @@ def ask_for_db_location(db_type):
     db_host = db_path = ''
     db_port = 0
     if db_type in db_local:
-        prompt = ("\nEnter your db file's full path," +
-                  '\n(Q) to Quit program, or' +
+        prompt = ("\nEnter your db file's full path,"
+                  '\n(Q) to Quit program, or'
                   '\n(S) to Start over: ')
         msg = "\n## '{}' is not a valid path. ##"
         db_path = ask_and_check_str(prompt, os.path.exists, msg, msg_arg=True)
     else:
-        prompt = ("\nEnter the db server's host name or IP address," +
-                  '\n(Q) to Quit program, or' +
+        prompt = ("\nEnter the db server's host name or IP address,"
+                  '\n(Q) to Quit program, or'
                   '\n(S) to Start over: ')
         msg = '\n## You did not enter a db host. ##'
         db_host = ask_and_check_str(prompt, echo, msg, msg_arg=False)
@@ -349,7 +362,7 @@ def ask_for_db_location(db_type):
         prompt = ('\nEnter the port (the ' + default_port +
                   '\n(Q) to Quit program, or' +
                   '\n(S) to Start over: ')
-        db_port = ask_and_check_int(prompt, msg='port', name='db_port')
+        db_port = ask_and_check_int(prompt, msg='port', name=db_port_class)
     return db_host, db_port, db_path
 
 
@@ -365,8 +378,8 @@ def ask_for_db_instance(db_type):
     """
     db_instance = ''
     if db_type in db_has_instance:
-        prompt = ('\nEnter the db instance,' +
-                  '\n(Q) to Quit program, or' +
+        prompt = ('\nEnter the db instance,'
+                  '\n(Q) to Quit program, or'
                   '\n(S) to Start over: ')
         msg = '\n## You did not enter a db instance. ##'
         db_instance = ask_and_check_str(prompt, echo, msg, msg_arg=False)
@@ -386,8 +399,8 @@ def ask_for_db_login(db_type):
     """
     db_user = db_password = ''
     if db_type in db_has_login:
-        prompt = ('\nEnter the db user name,' +
-                  '\n(Q) to Quit program, or' +
+        prompt = ('\nEnter the db user name,'
+                  '\n(Q) to Quit program, or'
                   '\n(S) to Start over: ')
         msg = '\n## You did not enter a username. ##'
         db_user = ask_and_check_str(prompt, echo, msg, msg_arg=False)
@@ -414,8 +427,8 @@ def ask_for_sql():
     Raises:
         none.
     """
-    prompt = ('\nEnter the SQL to execute in this db,' +
-              '\n(Q) to Quit program, or' +
+    prompt = ('\nEnter the SQL to execute in this db,'
+              '\n(Q) to Quit program, or'
               '\n(A) to use Another db: ')
     msg = '\n## You did not enter any SQL. ##'
     sql = ask_and_check_str(prompt, echo, msg, msg_arg=False)
@@ -443,22 +456,22 @@ def connect_to_db(db_type, db_host, db_port, db_instance, db_path, db_user,
     db_library = __import__(map_type_to_lib[db_type])
 
     conn_str = ''
-    if db_type in ('mysql', 'sql server'):
+    if db_type in (mysql, sql_server):
         pass
-    elif db_type == 'oracle':
+    elif db_type == oracle:
         z = '{}/{}@{}:{}/{}'
         conn_str = z.format(db_user, db_password, db_host, db_port, db_instance)
-    elif db_type == 'postgresql':
+    elif db_type == postgresql:
         z = "host='{}' dbname='{}' user='{}' password='{}' port='{}'"
         conn_str = z.format(db_host, db_instance, db_user, db_password, db_port)
-    elif db_type == 'db2':
+    elif db_type == db2:
         z = 'DATABASE={};HOSTNAME={};PORT={};PROTOCOL={};UID={};PWD={};'
         conn_str = z.format(db_instance, db_host, db_port, 'TCPIP', db_user,
                             db_password)
-    elif db_type == 'access':
+    elif db_type == access:
         z = r'DRIVER={Microsoft Access Driver (*.mdb, *.accdb)};DBQ={};'
         conn_str = z.format(db_path)
-    elif db_type == 'sqlite':
+    elif db_type == sqlite:
         conn_str = db_path
     else:
         print('Unknown db type {}, aborting.'.format(db_type))
@@ -556,8 +569,8 @@ def print_response(cursor, sql):
                 break
 
             # Maybe print more rows.
-            prompt = ('\nHit Enter to see more rows,' +
-                      '\n(Q) to Quit program, or' +
+            prompt = ('\nHit Enter to see more rows,'
+                      '\n(Q) to Quit program, or'
                       '\n(N) for No more rows: ')
             ask_end_user(prompt).upper()
     elif sql_type in ('INSERT', 'UPDATE', 'DELETE'):
@@ -681,14 +694,14 @@ def ask_and_check_int(prompt, msg, name):
             print('\n## You did not enter anything. ##')
         elif response.isdigit():
             response = int(response)
-            if name == 'db_port':
+            if name == db_port_class:
                 test = response in range(1, 65536)
-            elif name == 'db_type':
+            elif name == db_type_class:
                 test = (response-1) in range(len(db_types))
             else:
                 raise ValueError('ask_and_check_int: bad name {}.'.format(name))
             if test:
-                if name == 'db_type':
+                if name == db_type_class:
                     response = db_types[response-1]
                     print('\n## Selected {}. ##'.format(response))
                 break

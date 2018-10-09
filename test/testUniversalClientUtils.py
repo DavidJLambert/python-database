@@ -2,9 +2,9 @@
 https://github.com/David-J-Lambert/Python-Universal-DB-Client
 
 Summary: For testUniversalClientSqlite and testUniversalClientMysql.
-Version: 0.2.0
+Version: 0.2.1
 Author: David J. Lambert
-Date: September 24, 2018
+Date: October 9, 2018
 
 Purpose:  testUniversalClient.py does not test function main() in
 universalClient.py as is, it skips all but one of the executions of input().
@@ -24,9 +24,9 @@ Enter the number for your db type:
 (2) mysql
 (3) sql server
 (4) postgresql
-(5) db2
-(6) access
-(7) sqlite, or
+(5) sqlite
+(6) db2
+(7) access, or
 (Q) to Quit program: '''
 
 sql_prompt = '''

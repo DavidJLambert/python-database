@@ -6,13 +6,13 @@ SUMMARY:
   - https://github.com/David-J-Lambert/Python-Universal-DB-Client
 
 VERSION:
-  0.2.0
+  0.2.1
 
 AUTHOR:
   David J. Lambert
 
 DATE:
-  September 24, 2018
+  October 9, 2018
 
 PURPOSE:
   A sample of my Python coding, to demonstrate that I can write decent Python,
@@ -21,15 +21,16 @@ PURPOSE:
 
 DESCRIPTION:
   This is a command-line program that asks an end-user for SQL to execute on 1
-  of 7 different relational databases:
+  of 7 different relational databases, ordered by popularity as ranked in 
+  https://pypl.github.io/DB.html in Oct 2018:
 
   - Oracle
   - MySQL
   - Microsoft SQL Server
   - PostgreSQL
+  - SQLite
   - IBM DB2 (untested)
   - Microsoft Access 2016
-  - SQLite
 
   I also provide sample databases to run this program against (see below).
   The code for DB2 is untested.

@@ -3,9 +3,9 @@ https://github.com/David-J-Lambert/Python-Universal-DB-Client
 
 Summary: Another Unit Test of universalClient.py.  Using SQLite as representing
          simple databases on the local file system, with no login.
-Version: 0.2.0
+Version: 0.2.1
 Author: David J. Lambert
-Date: September 24, 2018
+Date: October 9, 2018
 
 Purpose:  testUniversalClient.py does not test function main() in
 universalClient.py as is, it skips all but one of the executions of input().
@@ -31,7 +31,7 @@ expected_out = (x.db_type_prompt + start_str + x.sql_prompt +
 
 # Find actual output from test of universalClient.
 
-db_type = '7'
+db_type = '5'
 db_path = r'C:\Coding\PyCharm\projects\Python-Universal-DB-Client\test\test.sqlite3'
 sql_cmd = 'select * from CUSTOMERS;'
 quit_cmd = 'Q'
