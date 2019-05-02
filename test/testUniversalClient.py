@@ -2,9 +2,9 @@
 https://github.com/DavidJLambert/Python-Universal-DB-Client
 
 Summary: Unit Test of universalClient.py.
-Version: 0.2.1
+Version: 0.2.2
 Author: David J. Lambert
-Date: October 9, 2018
+Date: May 2, 2019
 """
 
 from universalClient import *

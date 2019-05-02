@@ -8,13 +8,13 @@ SUMMARY:
   Command-line universal database client.
 
 VERSION:
-  0.2.1
+  0.2.2
 
 AUTHOR:
   David J. Lambert
 
 DATE:
-  October 9, 2018
+  May 2, 2019
 
 PURPOSE:
   A sample of my Python coding, to demonstrate that I can write decent Python,
@@ -176,9 +176,14 @@ from sqlite3 import DatabaseError, InterfaceError
 # -------- PYTHON VERSION STUFF
 
 if sys.version_info[0] == 2:
+    # Python 2.x
     input = raw_input
     Dont_Catch = (Warning, StopIteration)
+elif sys.version_info[1] <= 4:
+    # Python 3.0-3.4
+    Dont_Catch = (Warning, StopIteration)
 else:
+    # Python 3.5+
     Dont_Catch = (Warning, StopIteration, StopAsyncIteration)
 
 # -------- CREATE AND INITIALIZE VARIABLES

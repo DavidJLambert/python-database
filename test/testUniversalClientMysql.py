@@ -3,9 +3,9 @@ https://github.com/DavidJLambert/Python-Universal-DB-Client
 
 Summary: Another Unit Test of universalClient.py.  Using MySQL as representing
          enterprise databases on a server, with logins and instances.
-Version: 0.2.1
+Version: 0.2.2
 Author: David J. Lambert
-Date: October 9, 2018
+Date: May 2, 2019
 
 Purpose:  testUniversalClient.py does not test function main() in
 universalClient.py as is, it skips all but one of the executions of input().
