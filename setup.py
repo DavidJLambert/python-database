@@ -1,5 +1,5 @@
 """ setup.py
-https://github.com/David-J-Lambert/Python-Universal-DB-Client
+https://github.com/DavidJLambert/Python-Universal-DB-Client
 Version: 0.2.1
 Author: David J. Lambert
 Date: October 9, 2018
@@ -13,7 +13,7 @@ setup(
     description='Python Universal Database Client',
     long_description=open('README.rst').read(),
     long_description_content_type='text/x-rst',
-    url='https://github.com/David-J-Lambert/Python-Universal-DB-Client',
+    url='https://github.com/DavidJLambert/Python-Universal-DB-Client',
     author='David J. Lambert',
     author_email='David5Lambert7@gmail.com',
     license='MIT License',

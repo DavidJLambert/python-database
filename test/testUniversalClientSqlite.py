@@ -1,5 +1,5 @@
 """ testUniversalClientSqlite.py
-https://github.com/David-J-Lambert/Python-Universal-DB-Client
+https://github.com/DavidJLambert/Python-Universal-DB-Client
 
 Summary: Another Unit Test of universalClient.py.  Using SQLite as representing
          simple databases on the local file system, with no login.

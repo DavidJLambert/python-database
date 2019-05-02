@@ -1,5 +1,5 @@
 """ universalClient.py
-https://github.com/David-J-Lambert/Python-Universal-DB-Client
+https://github.com/DavidJLambert/Python-Universal-DB-Client
 
 Universal Database Client
 -------------------------

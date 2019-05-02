@@ -1,5 +1,5 @@
 """ testUniversalClientUtils.py
-https://github.com/David-J-Lambert/Python-Universal-DB-Client
+https://github.com/DavidJLambert/Python-Universal-DB-Client
 
 Summary: For testUniversalClientSqlite and testUniversalClientMysql.
 Version: 0.2.1

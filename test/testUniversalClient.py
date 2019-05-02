@@ -1,5 +1,5 @@
 """ testUniversalClient.py
-https://github.com/David-J-Lambert/Python-Universal-DB-Client
+https://github.com/DavidJLambert/Python-Universal-DB-Client
 
 Summary: Unit Test of universalClient.py.
 Version: 0.2.1

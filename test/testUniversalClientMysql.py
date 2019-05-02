@@ -1,5 +1,5 @@
 """ testUniversalClientMysql.py
-https://github.com/David-J-Lambert/Python-Universal-DB-Client
+https://github.com/DavidJLambert/Python-Universal-DB-Client
 
 Summary: Another Unit Test of universalClient.py.  Using MySQL as representing
          enterprise databases on a server, with logins and instances.
