@@ -45,7 +45,7 @@ setup(
         'Development Status :: 3 - Alpha',
         'Environment :: Console',
         'License :: OSI Approved :: MIT License',
-		'Intended Audience :: End Users/Desktop',
+        'Intended Audience :: End Users/Desktop',
         'Natural Language :: English',
         'Operating System :: OS Independent',
         'Programming Language :: Python :: 2.7',
