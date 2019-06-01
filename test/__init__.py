@@ -1,6 +1,16 @@
 """ __init__.py
-https://github.com/DavidJLambert/Python-Universal-DB-Client
-Version: 0.2.1
-Author: David J. Lambert
-Date: October 9, 2018
+REPOSITORY:
+  https://github.com/DavidJLambert/Python-Universal-DB-Client
+
+SUMMARY:
+  Unit Test of universalClient.py.
+
+VERSION:
+  0.2.3
+
+AUTHOR:
+  David J. Lambert
+
+DATE:
+  May 31, 2019
 """

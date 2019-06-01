@@ -1,18 +1,26 @@
 """ testUniversalClientSqlite.py
-https://github.com/DavidJLambert/Python-Universal-DB-Client
+REPOSITORY:
+  https://github.com/DavidJLambert/Python-Universal-DB-Client
 
-Summary: Another Unit Test of universalClient.py.  Using SQLite as representing
-         simple databases on the local file system, with no login.
-Version: 0.2.2
-Author: David J. Lambert
-Date: May 2, 2019
+SUMMARY:
+  Another Unit Test of universalClient.py.  Using SQLite as representing simple
+  databases on the local file system, with no login.
 
-Purpose:  testUniversalClient.py does not test function main() in
-universalClient.py as is, it skips all but one of the executions of input().
+VERSION:
+  0.2.3
 
-This module, testUniversalClientSqlite.py, tests main() as is for SQLite, with
-all executions of input().  It is not nearly as elegant, but it is much simpler
-than testUniversalClient.py.
+AUTHOR:
+  David J. Lambert
+
+DATE:
+  May 31, 2019
+
+PURPOSE:
+  testUniversalClient.py does not test function main() in
+  universalClient.py as is, it skips all but one of the executions of input().
+
+  This module tests main() as is for SQLite, with all executions of input().
+  It's not nearly as elegant, but it's much simpler than testUniversalClient.py.
 """
 
 import testUniversalClientUtils as x
@@ -32,7 +40,7 @@ expected_out = (x.db_type_prompt + start_str + x.sql_prompt +
 # Find actual output from test of universalClient.
 
 db_type = '5'
-db_path = r'C:\Coding\PyCharm\projects\Python-Universal-DB-Client\test\test.sqlite3'
+db_path = r'..\databases\ds2.sqlite3'
 sql_cmd = 'select * from CUSTOMERS;'
 quit_cmd = 'Q'
 cmds = ('{}\n'*4).format(db_type, db_path, sql_cmd, quit_cmd)

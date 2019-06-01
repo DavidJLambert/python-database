@@ -1,20 +1,18 @@
 """ universalClient.py
-https://github.com/DavidJLambert/Python-Universal-DB-Client
-
-Universal Database Client
--------------------------
+REPOSITORY:
+  https://github.com/DavidJLambert/Python-Universal-DB-Client
 
 SUMMARY:
   Command-line universal database client.
 
 VERSION:
-  0.2.2
+  0.2.3
 
 AUTHOR:
   David J. Lambert
 
 DATE:
-  May 2, 2019
+  May 31, 2019
 
 PURPOSE:
   A sample of my Python coding, to demonstrate that I can write decent Python,

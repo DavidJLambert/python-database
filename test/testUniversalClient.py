@@ -1,10 +1,18 @@
 """ testUniversalClient.py
-https://github.com/DavidJLambert/Python-Universal-DB-Client
+REPOSITORY:
+  https://github.com/DavidJLambert/Python-Universal-DB-Client
 
-Summary: Unit Test of universalClient.py.
-Version: 0.2.2
-Author: David J. Lambert
-Date: May 2, 2019
+SUMMARY:
+  Unit Test of universalClient.py.
+
+VERSION:
+  0.2.3
+
+AUTHOR:
+  David J. Lambert
+
+DATE:
+  May 31, 2019
 """
 
 from universalClient import *
@@ -60,8 +68,8 @@ class TestClass(object):
         through monkeypatch/mock, but could not figure out how to do that."""
         with pytest.raises(ExceptionUserQuit):
             # Get default number of rows (20) from test database.
-            connection = \
-                connect_to_db('sqlite', '', 0, '', 'test.sqlite3', '', '')
+            connection = connect_to_db('sqlite', '', 0, '',
+                                       '..\database\ds2.sqlite3', '', '')
             sql = 'select * from customers order by customerid asc;'
             cursor = run_sql(connection, sql)
             monkeypatch.setattr('builtins.input', lambda x: 'Q')
