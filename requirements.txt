@@ -6,10 +6,10 @@
 #   David J. Lambert
 #
 # VERSION:
-#   0.2.3
+#   0.2.5
 #
 # DATE:
-#   May 31, 2019
+#   Feb 28, 2020
 #
 # DATABASE CONNECTION LIBRARIES:
 
@@ -17,7 +17,6 @@ cx_Oracle # Oracle
 pymysql   # MySQL
 pymssql   # Microsoft SQL Server
 psycopg2  # PostgreSQL
-ibm_db    # IBM's DB2
 pyodbc    # Microsoft Access
 # sqlite3 # SQLite, already part of the Python Standard Library.
 

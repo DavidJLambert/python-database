@@ -1,18 +1,20 @@
 Universal Database Client
 -------------------------
 
+REPOSITORY:
+  https://github.com/DavidJLambert/Python-Universal-DB-Client
+
 SUMMARY:
-  - Command-line universal database client.
-  - https://github.com/DavidJLambert/Python-Universal-DB-Client
+  Command-line universal database client.
 
 VERSION:
-  0.2.3
+  0.2.5
 
 AUTHOR:
   David J. Lambert
 
 DATE:
-  May 31, 2019
+  Feb 28, 2020
 
 PURPOSE:
   A sample of my Python coding, to demonstrate that I can write decent Python,
@@ -21,19 +23,17 @@ PURPOSE:
 
 DESCRIPTION:
   This is a command-line program that asks an end-user for SQL to execute on 1
-  of 7 different relational databases, ordered by popularity as ranked in 
-  https://pypl.github.io/DB.html in Oct 2018:
+  of 6 different relational databases, ordered by popularity as ranked in
+  https://pypl.github.io/DB.html in Feb 2020:
 
   - Oracle
   - MySQL
   - Microsoft SQL Server
+  - Microsoft Access
   - PostgreSQL
   - SQLite
-  - IBM DB2 (untested)
-  - Microsoft Access 2016
 
   I also provide sample databases to run this program against (see below).
-  The code for DB2 is untested.
 
   The code for the 6 tested database types has been tested with CRUD statements
   (Create, Read, Update, Delete).  There is nothing to prevent the end-user
@@ -52,44 +52,32 @@ PROGRAM REQUIREMENTS:
     libraries.  Several ways to obtain the Oracle client libraries are
     documented on https://cx-oracle.readthedocs.io/en/latest/installation.html.
 
-    Cx_Oracle v7.0.0 supports Python versions 2.7 and 3.5-3.7, and Oracle
-    versions 11.2-18.3.
+    Cx_Oracle v7.3.0 supports Python versions 2.7 and 3.5-3.8,
+    and Oracle client versions 11.2-19.
 
   + For connecting to MySQL, my code uses the pymysql library, which is
     available on PyPI.
 
-    Pymysql v0.9.2 supports Python versions 2.7 and 3.4-3.7, plus MySQL and
+    Pymysql v0.9.3 supports Python versions 2.7 and 3.4-3.8, plus MySQL and
     MariaDB versions 5.5 and newer.
 
-  + For connecting to Microsoft SQL Server, my code uses the pymssql library,
-    which is available on PyPI.  The pymssql library requires Microsoft Visual
-    C++ 14, which is available as "Microsoft Visual C++ Build Tools" on
-    http://landinghub.visualstudio.com/visual-cpp-build-tools.
-
-    Pymssql v2.1.4 supports Python versions 2.7 and 3.4-3.7, and Microsoft SQL
-    Server versions 2005 and newer.
+  + For connecting to Microsoft SQL Server, my code used the pymssql library,
+    which was available on PyPI, but the pymssql project has been discontinued.
+    The alternative is to use pyodbc or turbodbc, the latter has a reputation
+    for being faster than pyodbc.
 
   + For connecting to PostgreSQL, my code uses the psycopg2 library, which
     is available on PyPI.
 
-    Psycopg2 v2.7.5 supports Python versions 2.6-2.7 and 3.2-3.6, and
-    PostgreSQL server versions 7.4-10.  Python 3.7 is unsupported, but I had no
-    problems using it.
+    Psycopg2 v2.8.4 supports Python version 2.7 and 3.4-3.8, and
+    PostgreSQL server versions 7.4-12.
 
-  + For connecting to IBM DB2, my code uses the ibm_db library, which is
-    available on PyPI.  The ibm_db library library requires Microsoft Visual
-    C++ 14, which is available as "Microsoft Visual C++ Build Tools" on
-    http://landinghub.visualstudio.com/visual-cpp-build-tools.
-
-    I can not find which Python versions are supported by ibm_db v2.0.9.  I had
-    no problems installing it in Python versions 2.7 and 3.3-3.7.
-
-  + For connecting to Microsoft Access 2016, my code uses the pyodbc library,
+  + For connecting to Microsoft Access, my code uses the pyodbc library,
     which is available on PyPI.  The pyodbc library requires the "Microsoft
     Access Database Engine 2016 Redistributable", which is available from
     https://www.microsoft.com/en-us/download/details.aspx?id=54920.
 
-    Pyodbc v4.0.24 supports Python versions 2.7 and 3.4-3.6.
+    Pyodbc v4.0.30 supports Python versions 2.7 and 3.4-3.8.
 
   + For connecting to SQLite, my code uses the sqlite3 library, part of the
     Python Standard Library.
@@ -99,7 +87,8 @@ PROGRAM REQUIREMENTS:
 SAMPLE DATABASES TO TEST THIS PROGRAM ON:
   I provide 5 sample databases to run this program against, one for each of the
   5 types of tested database types listed in the previous section.  I have
-  ambitions of creating sample Oracle and DB2 databases.
+  a test Oracle database on Windows, which is obviously not suitable for a
+  freely downloadable sample database.
 
   Sample SQLite and Microsoft Access databases are included in this package in
   these locations:

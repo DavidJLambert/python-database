@@ -6,13 +6,13 @@ SUMMARY:
   Command-line universal database client.
 
 VERSION:
-  0.2.3
+  0.2.5
 
 AUTHOR:
   David J. Lambert
 
 DATE:
-  May 31, 2019
+  Feb 28, 2020
 """
 
 from distutils.core import setup
@@ -30,10 +30,9 @@ setup(
     name='universalClient',
     py_modules=["universalClient"],
     url='https://github.com/DavidJLambert/Python-Universal-DB-Client',
-    version='0.2.3',
+    version='0.2.5',
     install_requires=[
         cx_Oracle,
-        ibm_db,
         psutil,
         psycopg2,
         pymssql,
@@ -49,10 +48,10 @@ setup(
         'Natural Language :: English',
         'Operating System :: OS Independent',
         'Programming Language :: Python :: 2.7',
-        'Programming Language :: Python :: 3.4',
         'Programming Language :: Python :: 3.5',
         'Programming Language :: Python :: 3.6',
         'Programming Language :: Python :: 3.7',
+        'Programming Language :: Python :: 3.8',
         'Topic :: Database :: Front-Ends',
     ],
 )

@@ -6,13 +6,13 @@ SUMMARY:
   Unit Test of universalClient.py.
 
 VERSION:
-  0.2.3
+  0.2.5
 
 AUTHOR:
   David J. Lambert
 
 DATE:
-  May 31, 2019
+  Feb 28, 2020
 """
 
 from universalClient import *

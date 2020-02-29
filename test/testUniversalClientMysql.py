@@ -7,13 +7,13 @@ SUMMARY:
   enterprise databases on a server, with logins and instances.
 
 VERSION:
-  0.2.3
+  0.2.5
 
 AUTHOR:
   David J. Lambert
 
 DATE:
-  May 31, 2019
+  Feb 28, 2020
 
 PURPOSE:
   testUniversalClient.py does not test function main() in
