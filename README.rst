@@ -8,13 +8,13 @@ SUMMARY:
   Command-line universal database client.
 
 VERSION:
-  0.2.5
+  0.2.6
 
 AUTHOR:
   David J. Lambert
 
 DATE:
-  Feb 28, 2020
+  Feb 29, 2020
 
 PURPOSE:
   A sample of my Python coding, to demonstrate that I can write decent Python,
@@ -63,8 +63,8 @@ PROGRAM REQUIREMENTS:
 
   + For connecting to Microsoft SQL Server, my code used the pymssql library,
     which was available on PyPI, but the pymssql project has been discontinued.
-    The alternative is to use pyodbc or turbodbc, the latter has a reputation
-    for being faster than pyodbc.
+    Instead, I use pyodbc.  Turbodbc has a reputation for being faster than
+    pyodbc, but I got fatal errors when trying to install it.
 
   + For connecting to PostgreSQL, my code uses the psycopg2 library, which
     is available on PyPI.

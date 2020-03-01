@@ -6,13 +6,13 @@ SUMMARY:
   Command-line universal database client.
 
 VERSION:
-  0.2.5
+  0.2.6
 
 AUTHOR:
   David J. Lambert
 
 DATE:
-  Feb 28, 2020
+  Feb 29, 2020
 
 PURPOSE:
   A sample of my Python coding, to demonstrate that I can write decent Python,
@@ -61,8 +61,8 @@ PROGRAM REQUIREMENTS:
 
   + For connecting to Microsoft SQL Server, my code used the pymssql library,
     which was available on PyPI, but the pymssql project has been discontinued.
-    The alternative is to use pyodbc or turbodbc, the latter has a reputation
-    for being faster than pyodbc.
+    Instead, I use pyodbc.  Turbodbc has a reputation for being faster than
+    pyodbc, but I got fatal errors when trying to install it.
 
   + For connecting to PostgreSQL, my code uses the psycopg2 library, which
     is available on PyPI.
@@ -157,27 +157,41 @@ from traceback import print_exception
 from getpass import getpass
 # Parent classes of all database exceptions (DB-API 2.0, see PEP 249).
 from sqlite3 import DatabaseError, InterfaceError
+import struct
+import platform
 
 # -------- PYTHON VERSION STUFF
 
-if sys.version_info[0] == 2:
+sys_version_info = sys.version_info
+# Set test = True for testing.
+test = False
+if not test:
+    bits = 8*struct.calcsize("P")
+    version = '.'.join(str(x) for x in sys_version_info)
+    z = '\n{} Version {}, {} bits.'
+    print(z.format(platform.python_implementation(), version, bits))
+
+if sys_version_info[0] == 2:
     # Python 2.x
     input = raw_input
     Dont_Catch = (Warning, StopIteration)
-elif sys.version_info[1] <= 4:
+elif sys_version_info[1] <= 4:
     # Python 3.0-3.4
     Dont_Catch = (Warning, StopIteration)
 else:
     # Python 3.5+
     Dont_Catch = (Warning, StopIteration, StopAsyncIteration)
 
+# -------- OS INFORMATION STUFF
+
+if not test:
+    print()
+    print(platform.uname())
+
 # -------- CREATE AND INITIALIZE VARIABLES
 
 db_port_class = 'db_port'
 db_type_class = 'db_type'
-
-# Supported relational db types, in descending order in popularity.
-default_ports = [1521, 3306, 1433, 5432, 0, 0]
 
 # Database types.
 oracle = 'oracle'
@@ -186,12 +200,21 @@ sql_server = 'sql server'
 postgresql = 'postgresql'
 access = 'access'
 sqlite = 'sqlite'
-db_types = [oracle, mysql, sql_server, postgresql, sqlite, access]
+db_types = [oracle, mysql, sql_server, postgresql, access, sqlite]
 
-db_libs = ['cx_Oracle', 'pymysql', 'pymssql', 'psycopg2', 'sqlite3', 'pyodbc']
+map_type_to_lib = {oracle: 'cx_Oracle',
+                   mysql: 'pymysql',
+                   sql_server: 'pyodbc',
+                   postgresql: 'psycopg2',
+                   access: 'pyodbc',
+                   sqlite: 'sqlite3'}
 
-map_type_to_lib = dict(zip(db_types, db_libs))
-map_type_to_port = dict(zip(db_types, default_ports))
+map_type_to_port = {oracle: 1521,
+                    mysql: 3306,
+                    sql_server: 1433,
+                    postgresql: 5432,
+                    access: None,
+                    sqlite: None}
 
 # All db types.
 all_dbs = set(db_types)
@@ -209,7 +232,7 @@ db_has_instance = db_has_login
 db_has_close = db_has_login
 
 # Db types that can use a connection string in the connect() method.
-db_uses_conn_str = {access, sqlite, oracle, postgresql}
+db_uses_conn_str = all_dbs - {mysql}
 
 ARRAY_SIZE = 20
 
@@ -443,23 +466,32 @@ def connect_to_db(db_type, db_host, db_port, db_instance, db_path, db_user,
     # Dynamic import of connection library for current db type.
     db_library = __import__(map_type_to_lib[db_type])
 
-    conn_str = ''
-    if db_type in (mysql, sql_server):
-        pass
+    if db_type not in db_uses_conn_str:
+        conn_str = ''
+        z = ''
+    elif db_type == sql_server:
+        conn_str = r'DRIVER={SQL Server};'
+        z = r'UID={};PWD={};SERVER={};PORT={};DATABASE={}'
     elif db_type == oracle:
+        conn_str = ''
         z = '{}/{}@{}:{}/{}'
-        conn_str = z.format(db_user, db_password, db_host, db_port, db_instance)
     elif db_type == postgresql:
-        z = "host='{}' dbname='{}' user='{}' password='{}' port='{}'"
-        conn_str = z.format(db_host, db_instance, db_user, db_password, db_port)
+        conn_str = ''
+        z = "user='{}' password='{}' host='{}' port='{}' dbname='{}'"
     elif db_type == access:
-        z = r'DRIVER={Microsoft Access Driver (*.mdb, *.accdb)};'
-        conn_str = z + r'DBQ={};'.format(db_path)
+        conn_str = r'DRIVER={Microsoft Access Driver (*.mdb, *.accdb)};'
+        z = r'DBQ={};'
     elif db_type == sqlite:
-        conn_str = db_path
+        conn_str = ''
+        z = '{}'
     else:
         print('Unknown db type {}, aborting.'.format(db_type))
         raise ExceptionUserAnotherDB()
+
+    if db_type in {sql_server, oracle, postgresql}:
+        conn_str += z.format(db_user, db_password, db_host, db_port, db_instance)
+    elif db_type in db_local:
+        conn_str += z.format(db_path)
 
     if db_type in db_uses_conn_str:
         connection = db_library.connect(conn_str)

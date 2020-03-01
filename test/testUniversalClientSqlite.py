@@ -7,13 +7,13 @@ SUMMARY:
   databases on the local file system, with no login.
 
 VERSION:
-  0.2.5
+  0.2.6
 
 AUTHOR:
   David J. Lambert
 
 DATE:
-  Feb 28, 2020
+  Feb 29, 2020
 
 PURPOSE:
   testUniversalClient.py does not test function main() in
@@ -39,7 +39,7 @@ expected_out = (x.db_type_prompt + start_str + x.sql_prompt +
 
 # Find actual output from test of universalClient.
 
-db_type = '5'
+db_type = '6'
 db_path = r'..\databases\ds2.sqlite3'
 sql_cmd = 'select * from CUSTOMERS;'
 quit_cmd = 'Q'

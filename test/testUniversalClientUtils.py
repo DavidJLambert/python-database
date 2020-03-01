@@ -6,13 +6,13 @@ SUMMARY:
   For testUniversalClientSqlite and testUniversalClientMysql.
 
 VERSION:
-  0.2.5
+  0.2.6
 
 AUTHOR:
   David J. Lambert
 
 DATE:
-  Feb 28, 2020
+  Feb 29, 2020
 
 PURPOSE:
   testUniversalClient.py does not test function main() in
@@ -32,8 +32,8 @@ Enter the number for your db type:
 (2) mysql
 (3) sql server
 (4) postgresql
-(5) sqlite
-(6) access, or
+(5) access
+(6) sqlite, or
 (Q) to Quit program: '''
 
 sql_prompt = '''
