@@ -1,18 +1,15 @@
 """ setup.py
-REPOSITORY:
-  https://github.com/DavidJLambert/Python-Universal-DB-Client
 
 SUMMARY:
   Command-line universal database client.
 
-VERSION:
-  0.2.6
+REPOSITORY: https://github.com/DavidJLambert/Python-Universal-DB-Client
 
-AUTHOR:
-  David J. Lambert
+AUTHOR: David J. Lambert
 
-DATE:
-  Feb 29, 2020
+VERSION: 0.2.7
+
+DATE: Mar 2, 2020
 """
 
 from distutils.core import setup
@@ -30,7 +27,7 @@ setup(
     name='universalClient',
     py_modules=["universalClient"],
     url='https://github.com/DavidJLambert/Python-Universal-DB-Client',
-    version='0.2.6',
+    version='0.2.7',
     install_requires=[
         cx_Oracle,
         psutil,

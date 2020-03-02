@@ -1,19 +1,16 @@
 """ testUniversalClientMysql.py
-REPOSITORY:
-  https://github.com/DavidJLambert/Python-Universal-DB-Client
 
 SUMMARY:
   Another Unit Test of universalClient.py.  Using MySQL as representing
   enterprise databases on a server, with logins and instances.
 
-VERSION:
-  0.2.6
+REPOSITORY: https://github.com/DavidJLambert/Python-Universal-DB-Client
 
-AUTHOR:
-  David J. Lambert
+AUTHOR: David J. Lambert
 
-DATE:
-  Feb 29, 2020
+VERSION: 0.2.7
+
+DATE: Mar 2, 2020
 
 PURPOSE:
   testUniversalClient.py does not test function main() in

@@ -1,15 +1,12 @@
 # requirements.txt
-# REPOSITORY:
-#   https://github.com/DavidJLambert/Python-Universal-DB-Client
+
+# REPOSITORY: https://github.com/DavidJLambert/Python-Universal-DB-Client
 #
-# AUTHOR:
-#   David J. Lambert
+# AUTHOR: David J. Lambert
 #
-# VERSION:
-#   0.2.5
+# VERSION: 0.2.7
 #
-# DATE:
-#   Feb 28, 2020
+# DATE: Mar 2, 2020
 #
 # DATABASE CONNECTION LIBRARIES:
 

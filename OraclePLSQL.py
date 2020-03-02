@@ -3,14 +3,13 @@
 SUMMARY:
   Class PLSQLWithBindVars executes PL/SQL with bind variables.
 
-VERSION:
-  0.2.0
+REPOSITORY: https://github.com/DavidJLambert/Python-Universal-DB-Client
 
-AUTHOR:
-  David J. Lambert
+AUTHOR: David J. Lambert
 
-DATE:
-  Feb 16, 2020
+VERSION: 0.2.0
+
+DATE: Feb 16, 2020
 
 PURPOSE:
   A sample of my Python coding, to demonstrate that I can write decent Python,
@@ -67,10 +66,29 @@ from datetime import datetime
 import sys
 import cx_Oracle
 import subprocess
+import struct
+import platform
 
 # -------- CREATE AND INITIALIZE VARIABLES
 
 ARRAY_SIZE = 20
+
+# -------- OS INFORMATION STUFF
+
+uname = platform.uname()
+z = ('OS: {}\nHost Name: {}\nOS Major Version: {}\nOS Full Version: {}'
+     '\nProcessor Type: {}\nProcessor: {}')
+result = z.format(uname.system, uname.node, uname.release, uname.version,
+                  uname.machine, uname.processor)
+print(result)
+
+# -------- PYTHON VERSION STUFF
+
+sys_version_info = sys.version_info
+bits = 8*struct.calcsize("P")
+version = '.'.join(str(x) for x in sys_version_info)
+z = '\n{} Version {}, {} bits.'
+print(z.format(platform.python_implementation(), version, bits))
 
 # -------- CUSTOM CLASSES
 

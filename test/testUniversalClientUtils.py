@@ -1,18 +1,15 @@
 """ testUniversalClientUtils.py
-REPOSITORY:
-  https://github.com/DavidJLambert/Python-Universal-DB-Client
 
 SUMMARY:
   For testUniversalClientSqlite and testUniversalClientMysql.
 
-VERSION:
-  0.2.6
+REPOSITORY: https://github.com/DavidJLambert/Python-Universal-DB-Client
 
-AUTHOR:
-  David J. Lambert
+AUTHOR: David J. Lambert
 
-DATE:
-  Feb 29, 2020
+VERSION: 0.2.7
+
+DATE: Mar 2, 2020
 
 PURPOSE:
   testUniversalClient.py does not test function main() in
@@ -63,8 +60,9 @@ else:
 
 def do_comparison(result, actual, expected):
     # Compare line by line, to make troubleshooting MUCH easier.
-    actual = actual.splitlines()
     expected = expected.splitlines()
+    # Skip first 8 lines, which contain OS and Python info and unpredictable.
+    actual = actual.splitlines()[8:]
     for line in range(len(actual)):
         if actual[line] != expected[line]:
             print('Actual:   BEGIN{}END'.format(actual[line]))

@@ -1,18 +1,15 @@
 """ universalClient.py
-REPOSITORY:
-  https://github.com/DavidJLambert/Python-Universal-DB-Client
 
 SUMMARY:
   Command-line universal database client.
 
-VERSION:
-  0.2.6
+REPOSITORY: https://github.com/DavidJLambert/Python-Universal-DB-Client
 
-AUTHOR:
-  David J. Lambert
+AUTHOR: David J. Lambert
 
-DATE:
-  Feb 29, 2020
+VERSION: 0.2.7
+
+DATE: Mar 2, 2020
 
 PURPOSE:
   A sample of my Python coding, to demonstrate that I can write decent Python,
@@ -160,16 +157,22 @@ from sqlite3 import DatabaseError, InterfaceError
 import struct
 import platform
 
+# -------- OS INFORMATION STUFF
+
+uname = platform.uname()
+z = ('OS: {}\nHost Name: {}\nOS Major Version: {}\nOS Full Version: {}'
+     '\nProcessor Type: {}\nProcessor: {}')
+result = z.format(uname.system, uname.node, uname.release, uname.version,
+                  uname.machine, uname.processor)
+print(result)
+
 # -------- PYTHON VERSION STUFF
 
 sys_version_info = sys.version_info
-# Set test = True for testing.
-test = False
-if not test:
-    bits = 8*struct.calcsize("P")
-    version = '.'.join(str(x) for x in sys_version_info)
-    z = '\n{} Version {}, {} bits.'
-    print(z.format(platform.python_implementation(), version, bits))
+bits = 8*struct.calcsize("P")
+version = '.'.join(str(x) for x in sys_version_info)
+z = '\n{} Version {}, {} bits.'
+print(z.format(platform.python_implementation(), version, bits))
 
 if sys_version_info[0] == 2:
     # Python 2.x
@@ -181,12 +184,6 @@ elif sys_version_info[1] <= 4:
 else:
     # Python 3.5+
     Dont_Catch = (Warning, StopIteration, StopAsyncIteration)
-
-# -------- OS INFORMATION STUFF
-
-if not test:
-    print()
-    print(platform.uname())
 
 # -------- CREATE AND INITIALIZE VARIABLES
 
