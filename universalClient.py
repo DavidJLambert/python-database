@@ -7,7 +7,7 @@ REPOSITORY: https://github.com/DavidJLambert/Python-Universal-DB-Client
 
 AUTHOR: David J. Lambert
 
-VERSION: 0.2.7
+VERSION: 0.2.8
 
 DATE: Mar 2, 2020
 
@@ -436,10 +436,31 @@ def ask_for_sql():
         none.
     """
     prompt = ('\nEnter the SQL to execute in this db,'
+              '\nReturn to finish entering the SQL,'
               '\n(Q) to Quit program, or'
               '\n(A) to use Another db: ')
     msg = '\n## You did not enter any SQL. ##'
-    sql = ask_and_check_str(prompt, echo, msg, msg_arg=False)
+    sql = ''
+    func = echo
+    while True:
+        # Get the next line of SQL.
+        response = ask_and_check_str(prompt, func, msg, msg_arg=False)
+        # Use a prompt only for the first line of SQL.
+        prompt = ''
+        # Make no response OK for subsequent calls.
+        func = lambda arg: "Spam!"
+
+        if response == '':
+            # Done entering SQL.
+            break
+        elif response.upper() == 'Q':
+            raise ExceptionUserQuit()
+        elif response.upper() == 'A':
+            raise ExceptionUserAnotherDB()
+        else:
+            # Add more text to the current PL/SQL.
+            sql += '\n' + response
+
     return sql
 
 
