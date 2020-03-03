@@ -1,15 +1,15 @@
-""" OraclePLSQL.py
+""" OracleClient.py
 
 SUMMARY:
-  Class PLSQLWithBindVars executes PL/SQL with bind variables.
+  Class OracleClient executes PL/SQL with bind variables.
 
 REPOSITORY: https://github.com/DavidJLambert/Python-Universal-DB-Client
 
 AUTHOR: David J. Lambert
 
-VERSION: 0.2.0
+VERSION: 0.3.0
 
-DATE: Feb 16, 2020
+DATE: Mar 3, 2020
 
 PURPOSE:
   A sample of my Python coding, to demonstrate that I can write decent Python,
@@ -19,10 +19,20 @@ DESCRIPTION:
   Class OracleDB contains all the information needed to log into an Oracle
   instance, plus it contains the connection handle to that database.
 
-  Class PLSQLWithBindVars executes PL/SQL with bind variables, and then prints
-  out the results.  In the method "oracle_table_schema" is code for listing all
-  the tables owned by the current login, all the columns in those tables,
-  and all indexes on those tables.
+  Class OracleClient executes PL/SQL with bind variables, and then prints
+  out the results.  Its externally useful methods are:
+  1)  set_plsql_text: gets the text of PL/SQL to run, including bind variables.
+  2)  get_plsql_text_from_command_line: reads text of PL/SQL to run from the
+      command line.
+  3)  get_bind_vars_from_command_line: reads the bind variables and their values
+      from the command line.
+  4)  run_plsql: executes PL/SQL, regardless of whether it was read as a text
+      variable (with set_plsql_text) or entered at the command line (by
+      get_plsql_text_from_command_line and get_bind_vars_from_command_line).
+  5)  oracle_table_schema: lists all the tables owned by the current login, all
+      the columns in those tables, and all indexes on those tables.
+
+  Stand-alone Method run_sqlplus runs sqlplus as a subprocess.
 
   The code has been tested with CRUD statements (Create, Read, Update, Delete).
   There is nothing to prevent the end-user from entering other PL/SQL, such as
@@ -298,7 +308,7 @@ class OracleDB(object):
         self.print_connection_status()
 
 
-class PLSQLWithBindVars(object):
+class OracleClient(object):
     """ Get text of a PL/SQL program with bind variables, then execute it.
 
     Attributes:
@@ -348,7 +358,7 @@ class PLSQLWithBindVars(object):
         self.plsql: str = plsql
         self.bind_var_dict: dict = bind_var_dict
 
-    def input_plsql_text(self) -> None:
+    def get_plsql_text_from_command_line(self) -> None:
         """ Get text of PL/SQL at the command line.
 
         Parameters:
@@ -377,7 +387,7 @@ class PLSQLWithBindVars(object):
                 plsql += '\n' + response
         self.plsql = plsql.strip()
 
-    def input_bind_variables(self) -> None:
+    def get_bind_vars_from_command_line(self) -> None:
         """ Get bind variables at the command line.
 
         Parameters:
@@ -793,7 +803,7 @@ class PLSQLWithBindVars(object):
         views = self.find_views()
 
 
-# -------- CUSTOM FUNCTIONS
+# -------- CUSTOM STAND-ALONE FUNCTIONS
 
 
 def print_stacktrace() -> None:
@@ -922,13 +932,15 @@ def run_sqlplus(plsql: str) -> list:
 
 
 if __name__ == '__main__':
+    # Get Oracle instance to use.
     username1 = 'ds2'
     password1 = ask_for_password(username1)
     hostname1 = 'DESKTOP-C54UGSE.attlocal.net'
     port_num1 = 1521
     instance1 = 'XE'
 
-    plsql = """
+    # Text of commands to run in sqlplus.
+    plsql_for_sqlplus = """
     CONNECT {}/{}@{}:{}/{}
     -- trim trailing spaces
     SET TRIMOUT ON
@@ -953,20 +965,25 @@ if __name__ == '__main__':
     exit
     """.format(username1, password1, hostname1, port_num1, instance1)
 
-    plsql_output = run_sqlplus(plsql)
-    for line in plsql_output:
+    # Run above commands in sqlplus.
+    sqlplus_output = run_sqlplus(plsql_for_sqlplus)
+
+    # Show the output from running above commands in sqlplus.
+    for line in sqlplus_output:
         print(line)
 
+    # Set up to connect to Oracle instance specified above.
     database1 = OracleDB(username1, password1, hostname1, port_num1, instance1)
 
+    # Connect to that Oracle instance.
     database1.open_connection()
     database1.print_all_connection_parameters()
 
-    # Pass in database connection.
-    plsql_with_bind_vars = PLSQLWithBindVars(database1)
+    # Pass in database connection to my Oracle Client.
+    my_oracle_client = OracleClient(database1)
 
-    # See the Oracle schema.
-    plsql_with_bind_vars.oracle_table_schema()
+    # See the Oracle schema for my login.
+    my_oracle_client.oracle_table_schema()
 
     # Pass in text of PL/SQL and a dict of bind variables and their values.
     plsql1 = """SELECT actor, title, price, categoryname
@@ -974,25 +991,32 @@ if __name__ == '__main__':
                ON p.category = c.category
                WHERE actor = :actor"""
     bind_var_dict1 = {'actor': 'CHEVY FOSTER'}
-    plsql_with_bind_vars.set_plsql_text(plsql1, bind_var_dict1)
+    my_oracle_client.set_plsql_text(plsql1, bind_var_dict1)
+
     # Execute the PL/SQL.
-    col_names1, rows1, row_count1 = plsql_with_bind_vars.run_plsql()
+    col_names1, rows1, row_count1 = my_oracle_client.run_plsql()
+
     # Show the results.
     print_rows(col_names1, rows1, align_col=True, col_sep=' ')
+
+    # Clean up.
     col_names1 = None
     rows1 = None
     print()
 
     # From command line, read in PL/SQL & dict of bind variables & their values.
-    plsql_with_bind_vars.input_plsql_text()
-    plsql_with_bind_vars.input_bind_variables()
+    my_oracle_client.get_plsql_text_from_command_line()
+    my_oracle_client.get_bind_vars_from_command_line()
+
     # Execute the PL/SQL.
-    col_names1, rows1, row_count1 = plsql_with_bind_vars.run_plsql()
+    col_names1, rows1, row_count1 = my_oracle_client.run_plsql()
+
     # Show the results.
     print_rows(col_names1, rows1, align_col=True, col_sep=' ')
+
+    # Clean up.
     col_names1 = None
     rows1 = None
     print()
-
     database1.close_connection()
     database1.print_connection_status()
