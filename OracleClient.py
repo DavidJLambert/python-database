@@ -7,9 +7,9 @@ REPOSITORY: https://github.com/DavidJLambert/Python-Universal-DB-Client
 
 AUTHOR: David J. Lambert
 
-VERSION: 0.3.0
+VERSION: 0.3.1
 
-DATE: Mar 3, 2020
+DATE: Mar 4, 2020
 
 PURPOSE:
   A sample of my Python coding, to demonstrate that I can write decent Python,
@@ -74,6 +74,7 @@ from traceback import print_exception
 from getpass import getpass
 from datetime import datetime
 import sys
+from os import path
 import cx_Oracle
 import subprocess
 import struct
@@ -117,7 +118,6 @@ class OracleDB(object):
         connection: the handle to this database. I set connection = None when
                     connection closed, this is not default behavior.
     """
-
     def __init__(self, username: str, password: str, hostname: str,
                  port_num: int, instance: str) -> None:
         """ Constructor method for this class.
@@ -169,7 +169,7 @@ class OracleDB(object):
         try:
             self.connection.close()
             self.connection = None
-            z = 'Successfully disconnected from instance "{}" on host "{}".'
+            z = '\nSuccessfully disconnected from instance "{}" on host "{}".'
             print(z.format(self.get_instance(), self.get_hostname()))
         except Exception:
             print_stacktrace()
@@ -308,6 +308,182 @@ class OracleDB(object):
         self.print_connection_status()
 
 
+class OutputWriter(object):
+    """ Write output to standard out or file.
+
+    Attributes:
+        out_file_name (str): relative or absolute path to output file,
+            or '' for standard output.
+        out_file (object): handle to opened file with name = out_file_name.
+        align_col (bool): pad values with spaces to align columns?
+        col_sep (str): character(s) to separate columns in output.
+            Common choices:
+            "" (no characters)
+            " " (single space, aka chr(32))
+            chr(9) (aka the horizontal tab character)
+            "|"
+            ","
+    """
+    def __init__(self, out_file_name: str = '', align_col: bool = True,
+                 col_sep: str = ',') -> None:
+        """ Constructor method for this class.
+
+        Parameters:
+            out_file_name (str): relative or absolute path to output file, or ''
+                for standard output.
+            align_col (bool): if True, pad columns with spaces in the output so
+                they always have the same width.
+            col_sep (str): character(s) to separate columns in output.
+                Common choices:
+                "" (no characters)
+                " " (single space, aka chr(32))
+                chr(9) (aka the horizontal tab character)
+                "|"
+                ","
+        Returns:
+        """
+        if out_file_name == '':
+            out_file = sys.stdout
+        else:
+            try:
+                out_file = open(out_file_name, 'w')
+            except Exception:
+                print_stacktrace()
+                exit(1)
+
+        self.out_file_name: str = out_file_name
+        self.out_file: str = out_file
+        self.align_col: str = align_col
+        self.col_sep: str = col_sep
+
+    def get_align_col(self):
+        """ Prompt for align_col: chaice to align or not align columns.
+
+        Parameters:
+        Returns:
+        """
+        prompt = '\nAlign columns (pad with blanks)?  Enter "Y" or "N":\n'
+        self.align_col = (input(prompt).strip().upper() in 'YT1')
+        if self.align_col:
+            print('You chose to align columns.')
+        else:
+            print('You chose to not align columns.')
+
+    def get_col_sep(self):
+        """ Prompt for col_sep: character(s) to separate columns.
+
+        Parameters:
+        Returns:
+        """
+        prompt = '\nEnter column separator character(s):\n'
+        self.col_sep = input(prompt)
+        print('You chose separate columns with "{}".'.format(self.col_sep))
+
+    def get_out_file_name(self):
+        """ Prompt for relative or absolute path to output file.
+
+        Parameters:
+        Returns:
+        """
+        prompt = ('\nEnter the name and relative or absolute'
+                  '\nlocation of the file to write output to.'
+                  '\nOr hit Return to print to the standard output:\n')
+        # Keep looping until able to open output file, or "" entered.
+        while True:
+            out_file_name = input(prompt).strip()
+            if out_file_name == '':
+                out_file = sys.stdout
+                break
+            else:
+                dir_name = path.dirname(out_file_name)
+                if path.isdir(dir_name):
+                    try:
+                        out_file = open(out_file_name, 'w')
+                        break
+                    except Exception:
+                        print_stacktrace()
+                else:
+                    print('Invalid directory specified: ' + dir_name)
+
+        self.out_file = out_file
+        self.out_file_name = out_file_name
+        print('Your output file is "{}".'.format(self.out_file_name))
+
+    def write_rows(self, all_rows: list, col_names: list) -> None:
+        """ Write rows in the output of PL/SQL to chosen destination.
+
+        Parameters:
+            all_rows (list): list of tuples, each tuple a row.
+            col_names (list): list of column names.
+                None means do not write column headers and line of dashes below.
+        Returns:
+        """
+        # Put quotes around columns containing col_sep.
+        if self.col_sep != '':
+            # Loop through rows.
+            for count1, row in enumerate(all_rows):
+                changed = False
+                # Loop through columns in each row.
+                for count2, column in enumerate(row):
+                    # Update row when needed.
+                    if self.col_sep in str(column):
+                        # Convert tuple to list to make row mutable.
+                        if not changed:
+                            row = list(row)
+                            changed = True
+                        # Must enclose values containing col_sep in quotes,
+                        # and must double quotes to escape them.
+                        row[count2] = "'" + str(column).replace("'", "''") + "'"
+                # Save updated version of row if changed = True.
+                if changed:
+                    all_rows[count1] = tuple(row)
+
+        # Column name widths.
+        if col_names is not None:
+            col_sizes = [len(col_name) for col_name in col_names]
+        else:
+            col_sizes = [len(row) for row in all_rows[0]]
+
+        if self.align_col:
+            # Column widths to align columns, make just wide enough.
+            for row in all_rows:
+                col_sizes = [max(size, len(str(col))) for (size, col) in
+                             zip(col_sizes, row)]
+
+        if col_names is not None:
+            # Format and print the column names.
+            formats = ['{{:^{}}}'.format(size) for size in col_sizes]
+            col_names_fmt = self.col_sep.join(formats)
+            self.out_file.write('\n' + col_names_fmt.format(*col_names))
+
+            # Print line of dashes below the column names.
+            dashes = ['-' * col_size for col_size in col_sizes]
+            self.out_file.write('\n' + self.col_sep.join(dashes))
+
+        # Find format string for the rows.
+        if self.align_col:
+            formats = ['{{:{}}}'.format(size) for size in col_sizes]
+        else:
+            formats = ['{}']*len(col_sizes)
+        row_output_fmt = self.col_sep.join(formats)
+
+        # Print the rows.
+        self.out_file.writelines(['\n' + row_output_fmt.format(*row)
+                                  for row in all_rows])
+        # If printed to file, announce that.
+        if self.out_file_name != '':
+            print('Just wrote output to "{}".'.format(self.out_file_name))
+
+    def finish_up(self):
+        """ Close output file, if it exists.
+
+        Parameters:
+        Returns:
+        """
+        if self.out_file_name != '':
+            self.out_file.close()
+
+
 class OracleClient(object):
     """ Get text of a PL/SQL program with bind variables, then execute it.
 
@@ -318,7 +494,6 @@ class OracleClient(object):
                 when cursor closed.
         connection: the handle to this database.
     """
-
     def __init__(self, database) -> None:
         """ Constructor method for this class.
 
@@ -365,9 +540,9 @@ class OracleClient(object):
         Returns:
         """
         # Get text of PL/SQL program.
-        prompt = ('\nEnter the current PL/SQL program.'
+        prompt = ('\nEnter the lines of a PL/SQL program.'
                   '\nHit Return to finish entering the PL/SQL.'
-                  '\nAt any point, enter "Q" to Quit this program.\n')
+                  '\nAt any point, enter "Q" to Quit this program:\n')
         plsql = ''
         while True:
             # Get the next line of PL/SQL.
@@ -395,7 +570,7 @@ class OracleClient(object):
         """
         # Prompts for calling input().
         prompt_name = ("\nEnter a bind variable name."
-                       "\nOr hit Return when done entering bind variables.\n")
+                       "\nOr hit Return when done entering bind variables:\n")
         prompt_type = ("\nEnter the letter of the bind variable's data type:"
                        "\n(T)ext."
                        "\n(I)nteger."
@@ -431,6 +606,7 @@ class OracleClient(object):
                     break
 
             # Get bind variable value.
+            bind_var_value = None
             if bind_var_type == 'T':
                 bind_var_value = input(prompt_value + prompt_text).strip()
             elif bind_var_type == 'I':
@@ -452,8 +628,6 @@ class OracleClient(object):
                 exit(0)
 
             # Add bind variable name/value pair to dictionary of bind variables.
-            # Ignore PyCharm warning bind_var_value might be referenced before
-            # assignment.
             bind_var_dict[bind_var_name] = bind_var_value
 
         # All done!
@@ -644,7 +818,7 @@ class OracleClient(object):
                                    row[columns['COLUMN_NAME']], data_type)
 
         # Return the column information.
-        return columns_col_names[0:2], columns_rows
+        return columns_col_names[0:3], columns_rows
 
     def find_view_columns(self, view_name: str) -> (list, list):
         """ Find the columns in a view.
@@ -730,10 +904,11 @@ class OracleClient(object):
         # Return the information about this index.
         return ind_col_col_names, ind_col_rows
 
-    def oracle_table_schema(self) -> None:
+    def oracle_table_schema(self, colsep=',') -> None:
         """ Print the schema for a table.
 
         Parameters:
+            colsep (str): column separator to use.
         Returns:
         """
         # Find tables
@@ -743,8 +918,8 @@ class OracleClient(object):
         prompt = '\nHere are the tables available to you:\n'
         for count, table in enumerate(tables):
             prompt += str(count) + ': ' + table + '\n'
-        prompt += ('Enter the number for the table you want info about:\n'
-                   'Or enter "Q" to quit.\n')
+        prompt += ('Enter the number for the table you want info about,\n'
+                   'Or enter "Q" to quit:\n')
         choice = input(prompt).strip().upper()
 
         # Interpret the choice.
@@ -756,9 +931,13 @@ class OracleClient(object):
         my_table = tables[choice]
         tables = None
 
+        # Set up to write output.
+        output_writer = OutputWriter(out_file_name='', align_col=True,
+                                     col_sep='|')
+
         # Find and print columns in this table.
         columns_col_names, columns_rows = self.find_table_columns(my_table)
-        print_rows(columns_col_names, columns_rows, align_col=True, col_sep=' ')
+        output_writer.write_rows(columns_rows, columns_col_names)
         columns_col_names = None
         columns_rows = None
 
@@ -771,7 +950,7 @@ class OracleClient(object):
         # Go through indexes, add index_columns to end of each index/row.
         for count, index in enumerate(indexes_rows):
             index_name = index[0]
-            ignore, ind_col_rows = self.find_index_columns(index_name)
+            _, ind_col_rows = self.find_index_columns(index_name)
             # Concatenate names of columns in index.  In function-based indexes,
             # use user_ind_expressions.column_expression instead of
             # user_ind_columns.column_name.
@@ -784,12 +963,15 @@ class OracleClient(object):
                 else:
                     index_columns += column_expr + ' ' + descend
             index_columns = '(' + index_columns + ')'
-            ignore = None
+            _ = None
             ind_col_rows = None
             # Add index_columns to end of each index/row (index is a tuple!).
             indexes_rows[count] = index + (index_columns,)
 
-        print_rows(indexes_col_names, indexes_rows, align_col=True, col_sep=' ')
+        print()
+        output_writer.write_rows(indexes_rows, indexes_col_names)
+        output_writer.finish_up()
+        output_writer = None
         indexes_col_names = None
         indexes_rows = None
 
@@ -834,7 +1016,7 @@ def ask_for_password(username: str) -> str:
     Returns:
         password (str): the password for "username".
     """
-    prompt = "Enter {}'s password: ".format(username)  # Accept anything.
+    prompt = "\nEnter {}'s password: ".format(username)  # Accept anything.
     if sys.stdin.isatty():
         # getpass works in terminal windows, but hangs in PyCharm (to fix, do
         # "Edit configurations" & select "Emulate terminal in output console").
@@ -843,72 +1025,6 @@ def ask_for_password(username: str) -> str:
         # In Eclipse & IDLE, getpass uses "input", which echoes password.
         password = input(prompt)
     return password
-
-
-def print_rows(col_names: list, all_rows: list, align_col: bool = True,
-               col_sep: str = ' ') -> None:
-    """ Print rows in the output of PL/SQL.
-
-    Parameters:
-        col_names (list): list of column names.
-        all_rows (list): list of tuples, each tuple a row.
-        align_col (bool): if True, align columns in the output so they
-            always have the same width, padded by spaces.
-        col_sep (str): column separator in output.  Common values are:
-                " " (single space, aka chr(32))
-                chr(9) (aka the horizontal tab character)
-                "|"
-                ","
-    Returns:
-    """
-
-    # Adjust columns containing col_sep.
-    if col_sep != '':
-        # Loop through rows.
-        for count1, row in enumerate(all_rows):
-            changed = False
-            # Loop through columns in each row.
-            for count2, column in enumerate(row):
-                # Update row when needed.
-                if col_sep in str(column):
-                    # Convert tuple to list to make row mutable.
-                    if not changed:
-                        row = list(row)
-                        changed = True
-                    # Must enclose values containing col_sep in quotes,
-                    # and must double quotes to escape them.
-                    row[count2] = "'" + str(column).replace("'", "''") + "'"
-            # Save updated version of row if changed = True.
-            if changed:
-                all_rows[count1] = tuple(row)
-
-    # Column name widths.
-    col_sizes = [len(col_name) for col_name in col_names]
-
-    if align_col:
-        # Column widths to align columns, make just wide enough.
-        for row in all_rows:
-            col_sizes = [max(size, len(str(col))) for (size, col) in
-                         zip(col_sizes, row)]
-
-    # Format and print the column names.
-    formats = ['{{:^{}}}'.format(size) for size in col_sizes]
-    col_names_fmt = col_sep.join(formats)
-    print('\n' + col_names_fmt.format(*col_names))
-
-    # Print line of dashes below the column names.
-    dashes = ['-' * col_size for col_size in col_sizes]
-    print(col_sep.join(dashes))
-
-    # Find format string for the rows.
-    if align_col:
-        formats = ['{{:{}}}'.format(size) for size in col_sizes]
-    else:
-        formats = ['{}']*len(col_sizes)
-    row_output_fmt = col_sep.join(formats)
-
-    # Print the rows.
-    [print(row_output_fmt.format(*row)) for row in all_rows]
 
 
 def run_sqlplus(plsql: str) -> list:
@@ -920,10 +1036,8 @@ def run_sqlplus(plsql: str) -> list:
         plsql_output (list): rows of output.
     """
 
-    p = subprocess.Popen(['sqlplus','/nolog'],
-                         stdin=subprocess.PIPE,
-                         stdout=subprocess.PIPE,
-                         stderr=subprocess.PIPE)
+    p = subprocess.Popen(['sqlplus', '/nolog'],  stdin=subprocess.PIPE,
+                         stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     (stdout, stderr) = p.communicate(plsql.encode('utf-8'))
 
     return stdout.decode('utf-8').split("\n")
@@ -939,19 +1053,30 @@ if __name__ == '__main__':
     port_num1 = 1521
     instance1 = 'XE'
 
-    # Text of commands to run in sqlplus.
+    # Column separator for output.
+    my_colsep = '|'
+
+    # Text of commands to run in sqlplus.  Explanation of commands:
+    # SET SQLPROMPT ""      turn off prompt
+    # SET SQLNUMBER OFF     turn off numbers printed for multi-line input
+    # SET TRIMOUT ON        trim trailing spaces
+    # SET TAB OFF           no tabs in the output
+    # SET NEWPAGE 0         no lines between page top and top title
+    # SET LINESIZE 256      characters/line
+    # SET WRAP OFF          lines don't wrap, truncated to match LINESIZE
+    # SET COLSEP "|"        set column separator to pipe character
+    # SPOOL <filename>      writes output to <filename> instead of standard out
+    # SET TRIMSPOOL ON      trim trailing spaces in output file
     plsql_for_sqlplus = """
+    SET SQLPROMPT ""
     CONNECT {}/{}@{}:{}/{}
-    -- trim trailing spaces
+    SET SQLNUMBER OFF
     SET TRIMOUT ON
-    -- no tabs in the output
     SET TAB OFF
-    -- no lines between page top and top title
     SET NEWPAGE 0
-    -- characters/line
     SET LINESIZE 256
-    -- lines don't wrap, truncated to match LINESIZE
     SET WRAP OFF
+    SET COLSEP "{}"
     VARIABLE actor VARCHAR2(50)
     VARIABLE whatever NUMBER
     BEGIN
@@ -963,12 +1088,13 @@ if __name__ == '__main__':
     ON p.category = c.category
     WHERE actor = :actor;
     exit
-    """.format(username1, password1, hostname1, port_num1, instance1)
+    """.format(username1, password1, hostname1, port_num1, instance1, my_colsep)
 
     # Run above commands in sqlplus.
     sqlplus_output = run_sqlplus(plsql_for_sqlplus)
 
     # Show the output from running above commands in sqlplus.
+    # Don't use write_rows, it'll crash because sqlplus output not all columnar.
     for line in sqlplus_output:
         print(line)
 
@@ -983,7 +1109,8 @@ if __name__ == '__main__':
     my_oracle_client = OracleClient(database1)
 
     # See the Oracle schema for my login.
-    my_oracle_client.oracle_table_schema()
+    my_oracle_client.oracle_table_schema(colsep=my_colsep)
+    print()
 
     # Pass in text of PL/SQL and a dict of bind variables and their values.
     plsql1 = """SELECT actor, title, price, categoryname
@@ -996,10 +1123,17 @@ if __name__ == '__main__':
     # Execute the PL/SQL.
     col_names1, rows1, row_count1 = my_oracle_client.run_plsql()
 
+    # Set up to write output.
+    output_writer = OutputWriter(out_file_name='', align_col=True,
+                                 col_sep='|')
+    output_writer.get_align_col()
+    output_writer.get_col_sep()
+    output_writer.get_out_file_name()
     # Show the results.
-    print_rows(col_names1, rows1, align_col=True, col_sep=' ')
+    output_writer.write_rows(rows1, col_names1)
 
     # Clean up.
+    output_writer.finish_up()
     col_names1 = None
     rows1 = None
     print()
@@ -1011,10 +1145,17 @@ if __name__ == '__main__':
     # Execute the PL/SQL.
     col_names1, rows1, row_count1 = my_oracle_client.run_plsql()
 
+    # Set up to write output.
+    output_writer = OutputWriter(out_file_name='', align_col=True,
+                                 col_sep='|')
+    output_writer.get_align_col()
+    output_writer.get_col_sep()
+    output_writer.get_out_file_name()
     # Show the results.
-    print_rows(col_names1, rows1, align_col=True, col_sep=' ')
+    output_writer.write_rows(rows1, col_names1)
 
     # Clean up.
+    output_writer.finish_up()
     col_names1 = None
     rows1 = None
     print()
