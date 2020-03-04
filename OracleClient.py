@@ -32,6 +32,8 @@ DESCRIPTION:
   5)  oracle_table_schema: lists all the tables owned by the current login, all
       the columns in those tables, and all indexes on those tables.
 
+  Class OutputWriter handles all query output to file or to standard output.
+
   Stand-alone Method run_sqlplus runs sqlplus as a subprocess.
 
   The code has been tested with CRUD statements (Create, Read, Update, Delete).
