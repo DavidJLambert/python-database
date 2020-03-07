@@ -7,9 +7,9 @@ REPOSITORY: https://github.com/DavidJLambert/Python-Universal-DB-Client
 
 AUTHOR: David J. Lambert
 
-VERSION: 0.3.1
+VERSION: 0.4.0
 
-DATE: Mar 4, 2020
+DATE: Mar 6, 2020
 
 PURPOSE:
   A sample of my Python coding, to demonstrate that I can write decent Python,
@@ -24,13 +24,15 @@ DESCRIPTION:
   1)  set_plsql_text: gets the text of PL/SQL to run, including bind variables.
   2)  get_plsql_text_from_command_line: reads text of PL/SQL to run from the
       command line.
-  3)  get_bind_vars_from_command_line: reads the bind variables and their values
+  3)  get_bindvars_from_command_line: reads the bind variables and their values
       from the command line.
   4)  run_plsql: executes PL/SQL, regardless of whether it was read as a text
       variable (with set_plsql_text) or entered at the command line (by
-      get_plsql_text_from_command_line and get_bind_vars_from_command_line).
+      get_plsql_text_from_command_line and get_bindvars_from_command_line).
   5)  oracle_table_schema: lists all the tables owned by the current login, all
       the columns in those tables, and all indexes on those tables.
+  6)  oracle_view_schema: lists all the views owned by the current login, all
+      the columns in those views, and the SQL for the view.
 
   Class OutputWriter handles all query output to file or to standard output.
 
@@ -89,9 +91,9 @@ ARRAY_SIZE = 20
 # -------- OS INFORMATION STUFF
 
 uname = platform.uname()
-z = ('OS: {}\nHost Name: {}\nOS Major Version: {}\nOS Full Version: {}'
+q = ('OS: {}\nHost Name: {}\nOS Major Version: {}\nOS Full Version: {}'
      '\nProcessor Type: {}\nProcessor: {}')
-result = z.format(uname.system, uname.node, uname.release, uname.version,
+result = q.format(uname.system, uname.node, uname.release, uname.version,
                   uname.machine, uname.processor)
 print(result)
 
@@ -100,8 +102,8 @@ print(result)
 sys_version_info = sys.version_info
 bits = 8*struct.calcsize("P")
 version = '.'.join(str(x) for x in sys_version_info)
-z = '\n{} Version {}, {} bits.'
-print(z.format(platform.python_implementation(), version, bits))
+q = '\n{} Version {}, {} bits.'
+print(q.format(platform.python_implementation(), version, bits))
 
 # -------- CUSTOM CLASSES
 
@@ -143,6 +145,7 @@ class OracleDB(object):
         self.connection_string = z.format(username, password, hostname,
                                           port_num, instance)
         self.connection = None
+        return
 
     # DATABASE CONNECTION METHODS.
 
@@ -161,6 +164,7 @@ class OracleDB(object):
             z = 'Failed to connect to instance "{}" on host "{}".'
             print(z.format(self.get_instance(), self.get_hostname()))
             exit(1)
+        return
 
     def close_connection(self) -> None:
         """ Method to close connection to this database.
@@ -178,6 +182,7 @@ class OracleDB(object):
             z = 'Failed to disconnect from instance "{}" on host "{}".'
             print(z.format(self.get_instance(), self.get_hostname()))
             exit(1)
+        return
 
     def get_connection_object(self):
         """ Method that returns handle (connection) to this database.
@@ -208,6 +213,7 @@ class OracleDB(object):
         else:
             z = 'Connection status for instance "{}", host "{}": not connected.'
         print(z.format(self.get_instance(), self.get_hostname()))
+        return
 
     # DATABASE INFORMATION METHODS.
 
@@ -227,6 +233,7 @@ class OracleDB(object):
         Returns:
         """
         print('The Oracle version is "{}".'.format(self.get_database_version()))
+        return
 
     def get_username(self) -> str:
         """ Method to return username connecting to this database.
@@ -244,6 +251,7 @@ class OracleDB(object):
         Returns:
         """
         print('The Oracle username is "{}".'.format(self.get_username()))
+        return
 
     def get_hostname(self) -> str:
         """ Method to return hostname of this database.
@@ -261,6 +269,7 @@ class OracleDB(object):
         Returns:
         """
         print('The Oracle hostname is "{}".'.format(self.get_hostname()))
+        return
 
     def get_port_num(self) -> int:
         """ Method to return the port number this database listens on.
@@ -278,6 +287,7 @@ class OracleDB(object):
         Returns:
         """
         print('The Oracle port number is {}.'.format(self.get_port_num()))
+        return
 
     def get_instance(self) -> str:
         """ Method to return instance name of this database.
@@ -295,6 +305,7 @@ class OracleDB(object):
         Returns:
         """
         print('The Oracle instance is "{}".'.format(self.get_instance()))
+        return
 
     def print_all_connection_parameters(self) -> None:
         """ Method that executes all print methods of this class.
@@ -308,6 +319,7 @@ class OracleDB(object):
         self.print_port_num()
         self.print_instance()
         self.print_connection_status()
+        return
 
 
 class OutputWriter(object):
@@ -344,6 +356,7 @@ class OutputWriter(object):
                 ","
         Returns:
         """
+        out_file = None
         if out_file_name == '':
             out_file = sys.stdout
         else:
@@ -354,9 +367,10 @@ class OutputWriter(object):
                 exit(1)
 
         self.out_file_name: str = out_file_name
-        self.out_file: str = out_file
-        self.align_col: str = align_col
+        self.out_file = out_file
+        self.align_col: bool = align_col
         self.col_sep: str = col_sep
+        return
 
     def get_align_col(self):
         """ Prompt for align_col: chaice to align or not align columns.
@@ -370,6 +384,7 @@ class OutputWriter(object):
             print('You chose to align columns.')
         else:
             print('You chose to not align columns.')
+        return
 
     def get_col_sep(self):
         """ Prompt for col_sep: character(s) to separate columns.
@@ -380,6 +395,7 @@ class OutputWriter(object):
         prompt = '\nEnter column separator character(s):\n'
         self.col_sep = input(prompt)
         print('You chose separate columns with "{}".'.format(self.col_sep))
+        return
 
     def get_out_file_name(self):
         """ Prompt for relative or absolute path to output file.
@@ -409,7 +425,11 @@ class OutputWriter(object):
 
         self.out_file = out_file
         self.out_file_name = out_file_name
-        print('Your output file is "{}".'.format(self.out_file_name))
+        if self.out_file_name == '':
+            print('You chose to write to the standard output.')
+        else:
+            print('Your output file is "{}".'.format(self.out_file_name))
+        return
 
     def write_rows(self, all_rows: list, col_names: list) -> None:
         """ Write rows in the output of PL/SQL to chosen destination.
@@ -423,10 +443,10 @@ class OutputWriter(object):
         # Put quotes around columns containing col_sep.
         if self.col_sep != '':
             # Loop through rows.
-            for count1, row in enumerate(all_rows):
+            for index1, row in enumerate(all_rows):
                 changed = False
                 # Loop through columns in each row.
-                for count2, column in enumerate(row):
+                for index2, column in enumerate(row):
                     # Update row when needed.
                     if self.col_sep in str(column):
                         # Convert tuple to list to make row mutable.
@@ -435,10 +455,10 @@ class OutputWriter(object):
                             changed = True
                         # Must enclose values containing col_sep in quotes,
                         # and must double quotes to escape them.
-                        row[count2] = "'" + str(column).replace("'", "''") + "'"
+                        row[index2] = "'" + str(column).replace("'", "''") + "'"
                 # Save updated version of row if changed = True.
                 if changed:
-                    all_rows[count1] = tuple(row)
+                    all_rows[index1] = tuple(row)
 
         # Column name widths.
         if col_names is not None:
@@ -467,14 +487,14 @@ class OutputWriter(object):
             formats = ['{{:{}}}'.format(size) for size in col_sizes]
         else:
             formats = ['{}']*len(col_sizes)
-        row_output_fmt = self.col_sep.join(formats)
+        row_fmt = self.col_sep.join(formats)
 
         # Print the rows.
-        self.out_file.writelines(['\n' + row_output_fmt.format(*row)
-                                  for row in all_rows])
+        self.out_file.writelines(['\n' + row_fmt.format(*r) for r in all_rows])
         # If printed to file, announce that.
         if self.out_file_name != '':
             print('Just wrote output to "{}".'.format(self.out_file_name))
+        return
 
     def finish_up(self):
         """ Close output file, if it exists.
@@ -484,6 +504,7 @@ class OutputWriter(object):
         """
         if self.out_file_name != '':
             self.out_file.close()
+        return
 
 
 class OracleClient(object):
@@ -491,7 +512,7 @@ class OracleClient(object):
 
     Attributes:
         plsql (str): the text of a PL/SQL program with bind variables.
-        bind_var_dict (dict): the bind variables' names and values.
+        bindvar_dict (dict): the bind variables' names and values.
         cursor: the cursor for this PL/SQL when it executes. I set cursor = None
                 when cursor closed.
         connection: the handle to this database.
@@ -510,7 +531,8 @@ class OracleClient(object):
         # To avoid PyCharm warnings about variables defined outside of __init__.
         self.plsql: str = ''
         self.cursor = None
-        self.bind_var_dict = dict()
+        self.bindvar_dict = dict()
+        return
 
     def cleanup(self) -> None:
         """ Clean up resources before destroying an instance of this class.
@@ -523,17 +545,19 @@ class OracleClient(object):
             self.cursor = None
         if self.connection is not None:
             self.connection.commit()
+        return
 
-    def set_plsql_text(self, plsql: str, bind_var_dict: dict) -> None:
+    def set_plsql_text(self, plsql: str, bindvar_dict: dict) -> None:
         """ Set text of PL/SQL to execute + values of any bind variables in it.
 
         Parameters:
             plsql (str): text of the PL/SQL to execute.
-            bind_var_dict (dict): the bind variables' names and values.
+            bindvar_dict (dict): the bind variables' names and values.
         Returns:
         """
         self.plsql: str = plsql
-        self.bind_var_dict: dict = bind_var_dict
+        self.bindvar_dict: dict = bindvar_dict
+        return
 
     def get_plsql_text_from_command_line(self) -> None:
         """ Get text of PL/SQL at the command line.
@@ -563,8 +587,9 @@ class OracleClient(object):
                 # Add more text to the current PL/SQL.
                 plsql += '\n' + response
         self.plsql = plsql.strip()
+        return
 
-    def get_bind_vars_from_command_line(self) -> None:
+    def get_bindvars_from_command_line(self) -> None:
         """ Get bind variables at the command line.
 
         Parameters:
@@ -583,44 +608,43 @@ class OracleClient(object):
         prompt_date = "Use the date format 'm/d/yyyy'.\n"
 
         # Dict with keys = bind variable names, values = bind variable values.
-        bind_var_dict = dict()
+        bindvar_dict = dict()
         # One loop per bind variable name/value pair.
         while True:
             # Get bind variable name.
-            bind_var_name = input(prompt_name).strip()
-            if bind_var_name == '':
+            bindvar_name = input(prompt_name).strip()
+            if bindvar_name == '':
                 # Done entering PL/SQL.
                 break
-            elif bind_var_name.upper() == 'Q':
+            elif bindvar_name.upper() == 'Q':
                 print('\nQuitting at your request.')
                 self.cleanup()
                 exit(0)
 
             # Get bind variable data type.
             while True:
-                bind_var_type = input(prompt_type).strip().upper()
-                if len(bind_var_type) != 1:
+                bindvar_type = input(prompt_type).strip().upper()
+                if len(bindvar_type) != 1:
                     print('Enter one character only, please try again.')
-                elif bind_var_type not in 'TIRD':
+                elif bindvar_type not in 'TIRD':
                     print('Invalid entry, please try again.')
                 else:
                     # Valid input.
                     break
 
             # Get bind variable value.
-            bind_var_value = None
-            if bind_var_type == 'T':
-                bind_var_value = input(prompt_value + prompt_text).strip()
-            elif bind_var_type == 'I':
-                bind_var_value = int(input(prompt_value).strip())
-            elif bind_var_type == 'R':
-                bind_var_value = float(input(prompt_value).strip())
-            elif bind_var_type == 'D':
+            bindvar_val = None
+            if bindvar_type == 'T':
+                bindvar_val = input(prompt_value + prompt_text).strip()
+            elif bindvar_type == 'I':
+                bindvar_val = int(input(prompt_value).strip())
+            elif bindvar_type == 'R':
+                bindvar_val = float(input(prompt_value).strip())
+            elif bindvar_type == 'D':
                 while True:
-                    bind_var_value = input(prompt_value + prompt_date).strip()
+                    bindvar_val = input(prompt_value + prompt_date).strip()
                     try:
-                        bind_var_value = datetime.strptime(bind_var_value,
-                                                           '%m/%d/%Y')
+                        bindvar_val = datetime.strptime(bindvar_val, '%m/%d/%Y')
                         break
                     except ValueError:
                         print('Invalid date, please try again.')
@@ -630,10 +654,11 @@ class OracleClient(object):
                 exit(0)
 
             # Add bind variable name/value pair to dictionary of bind variables.
-            bind_var_dict[bind_var_name] = bind_var_value
+            bindvar_dict[bindvar_name] = bindvar_val
 
         # All done!
-        self.bind_var_dict = bind_var_dict
+        self.bindvar_dict = bindvar_dict
+        return
 
     def run_plsql(self) -> (list, list, int):
         """ Run the PL/SQL, perhaps return rows and column names.
@@ -664,7 +689,7 @@ class OracleClient(object):
                 self.cursor = self.connection.cursor()
 
                 # Execute PL/SQL.
-                self.cursor.execute(self.plsql, self.bind_var_dict)
+                self.cursor.execute(self.plsql, self.bindvar_dict)
                 self.connection.commit()
 
                 # Get row count.
@@ -708,43 +733,37 @@ class OracleClient(object):
         plsql_x = """SELECT table_name
                      FROM user_tables
                      ORDER BY table_name"""
-        bind_var_dict_x = dict()
-        # CLUSTER_NAME
-        # IOT_NAME
-        # IOT_TYPE
+        bindvar_dict_x = dict()
 
         # Execute the PL/SQL.
-        self.set_plsql_text(plsql_x, bind_var_dict_x)
+        self.set_plsql_text(plsql_x, bindvar_dict_x)
         tables_col_names, tables_rows, tables_row_count = self.run_plsql()
 
         # Return the list of table names.
         return [row[0] for row in tables_rows]
 
-    def find_views(self) -> list:
+    def find_views(self) -> (list, list):
         """ Find the views in this user's schema.
 
         Parameters:
         Returns:
-            view_names (list): list of the views in this user's schema.
+            views_col_names (list): column names: [view_name, view_sql]
+            view_names (list): list of tuples, each tuple being the columns
+                above for the views in this user's schema.
         """
 
-        # The query for finding the tables in this user's schema.
-        plsql_x = """SELECT view_name
+        # The query for finding the views in this user's schema.
+        plsql_x = """SELECT view_name, text AS view_sql
                      FROM user_views
                      ORDER BY view_name"""
-        bind_var_dict_x = dict()
-        # TEXT_LENGTH
-        # TEXT
-        # TYPE_TEXT_LENGTH
-        # TYPE_TEXT
-        # VIEW_TYPE
+        bindvar_dict_x = dict()
 
         # Execute the PL/SQL.
-        self.set_plsql_text(plsql_x, bind_var_dict_x)
+        self.set_plsql_text(plsql_x, bindvar_dict_x)
         views_col_names, views_rows, views_row_count = self.run_plsql()
 
-        # Return the list of table names.
-        return [row[0] for row in views_rows]
+        # Return the list of view names.
+        return views_col_names, views_rows
 
     def find_table_columns(self, table_name: str) -> (list, list):
         """ Find the columns in a table.
@@ -752,75 +771,56 @@ class OracleClient(object):
         Parameters:
             table_name (str): the table to find the columns of.
         Returns:
-            col_names (list): column names: [column_id, column_name, data_type]
-            rows (list): list of tuples, each tuple holds info about one column:
-                tuple = (column_id, column_name, data_type).
+            col_names (list): column names:
+                [column_id, column_name, data_type, nullable, data_default,
+                 comments]
+            rows (list): list of tuples, each tuple holds info about one column,
+                with the column names listed in col_names.
         """
 
         # The SQL to find the columns, their order, and their data types.
-        plsql_x = """SELECT column_id, column_name, data_type, data_length,
-                            data_precision, data_scale, char_used
-                     FROM user_tab_cols
-                     WHERE table_name = :table_name
-                     ORDER BY column_id"""
+        plsql_x = """
+        SELECT column_id, c.column_name,
+          case
+            when (data_type LIKE '%CHAR%' OR data_type IN ('RAW','UROWID'))
+              then data_type||'('||c.char_length||
+                   decode(char_used,'B',' BYTE','C',' CHAR',null)||')'
+            when data_type = 'NUMBER'
+              then
+                case
+                  when c.data_precision is null and c.data_scale is null
+                    then 'NUMBER'
+                  when c.data_precision is null and c.data_scale is not null
+                    then 'NUMBER(38,'||c.data_scale||')'
+                  else data_type||'('||c.data_precision||','||c.data_scale||')'
+                  end
+            when data_type = 'BFILE'
+              then 'BINARY FILE LOB (BFILE)'
+            when data_type = 'FLOAT'
+              then data_type||'('||to_char(data_precision)||')'||
+                   decode(data_precision, 126,' (double precision)',
+                   63,' (real)',null)
+            else data_type
+            end data_type,
+            decode(nullable,'Y','Yes','No') nullable,
+            data_default,
+            NVL(comments,'(null)') comments
+        FROM user_tab_cols c, user_col_comments com
+        WHERE c.table_name = :table_name
+        AND c.table_name = com.table_name
+        AND c.column_name = com.column_name
+        ORDER BY column_id"""
 
         # Execute the PL/SQL.
-        bind_var_dict_x = {"table_name": table_name}
-        self.set_plsql_text(plsql_x, bind_var_dict_x)
+        bindvar_dict_x = {"table_name": table_name}
+        self.set_plsql_text(plsql_x, bindvar_dict_x)
         columns_col_names, columns_rows, columns_row_count = self.run_plsql()
 
-        # We got data_type, data_length, data_precision, data_scale, and
-        # char_used from user_tab_cols.  Now to translate that into the data
-        # type we usually see when we run DESCRIBE <TABLE_NAME>.
-
-        # Create mapping from column name to index number, so I can access
-        # items in col_names by column name instead of by index number.
-        columns = {col_name: count for count, col_name in
-                   enumerate(columns_col_names)}
-
-        # Put the human-readable data type in data_type.
-        for count, row in enumerate(columns_rows):
-            data_type = row[columns['DATA_TYPE']]
-            if data_type in ('BLOB', 'NCLOB', 'CLOB', 'DATE', 'BINARY_FLOAT',
-                             'BINARY_DOUBLE', 'LONG', 'LONG RAW'):
-                pass
-            elif data_type == 'BFILE':
-                data_type = 'BINARY FILE LOB (BFILE)'
-            elif data_type[0:8] in ('TIMESTAMP', 'INTERVAL '):
-                pass
-            elif data_type in ('NCHAR', 'NVARCHAR2'):
-                data_length = row[columns['DATA_LENGTH']]
-                data_type += '(' + str(data_length//2) + ')'
-            elif data_type in ('VARCHAR2', 'RAW', 'UROWID', 'CHAR'):
-                data_length = row[columns['DATA_LENGTH']]
-                if row[columns['CHAR_USED']] == 'C':
-                    data_length = str(data_length//4) + ' CHAR'
-                data_type += '(' + str(data_length) + ')'
-            elif data_type == 'NUMBER':
-                data_precision = row[columns['DATA_PRECISION']]
-                data_scale = row[columns['DATA_SCALE']]
-                if data_precision is not None:
-                    data_type += '(' + str(data_precision)
-                    if data_scale > 0:
-                        data_type += ',' + str(data_scale) + ')'
-                    else:
-                        data_type += ')'
-                elif data_scale == 0:
-                    data_type += '(38) (integer)'
-            elif data_type == 'FLOAT':
-                data_precision = row[columns['DATA_PRECISION']]
-                data_type += '(' + str(data_precision) + ')'
-                if data_precision == 126:
-                    data_type += ' (double precision)'
-                elif data_precision == 63:
-                    data_type += ' (real)'
-            # Overwrite current row.
-            # COLUMN_ID and COLUMN_NAME unchanged, DATA_TYPE different.
-            columns_rows[count] = (row[columns['COLUMN_ID']],
-                                   row[columns['COLUMN_NAME']], data_type)
+        # Replace None by '(null)' everywhere.
+        columns_rows = [[no_none(x, '(null)') for x in r] for r in columns_rows]
 
         # Return the column information.
-        return columns_col_names[0:3], columns_rows
+        return columns_col_names, columns_rows
 
     def find_view_columns(self, view_name: str) -> (list, list):
         """ Find the columns in a view.
@@ -828,27 +828,13 @@ class OracleClient(object):
         Parameters:
             view_name (str): the table to find the columns of.
         Returns:
-            col_names (list): column names: [column_id, column_name, data_type]
-            rows (list): list of tuples, each tuple holds info about one column:
-                tuple = (column_id, column_name, data_type).
+            col_names (list): column names:
+                [column_id, column_name, data_type, nullable, data_default,
+                 comments]
+            rows (list): list of tuples, each tuple holds info about one column,
+                with the column names listed in col_names.
         """
-    """
-    select
-    col.column_id,
-    col.owner as schema_name,
-    col.table_name,
-    col.column_name,
-    col.data_type,
-    col.data_length,
-    col.data_precision,
-    col.data_scale,
-    col.nullable
-    from sys.all_tab_columns col
-    inner join sys.all_views v on
-        col.owner = v.owner
-        and col.table_name = v.view_name
-    order by col.owner, col.table_name, col.column_id;
-    """
+        return self.find_table_columns(view_name)
 
     def find_indexes(self, table_name: str) -> (list, list):
         """ Find the indexes in a table.
@@ -867,10 +853,10 @@ class OracleClient(object):
                      FROM user_indexes
                      WHERE table_name = :table_name
                      ORDER BY index_name"""
-        bind_var_dict_x = {"table_name": table_name}
+        bindvar_dict_x = {"table_name": table_name}
 
         # Execute the PL/SQL.
-        self.set_plsql_text(plsql_x, bind_var_dict_x)
+        self.set_plsql_text(plsql_x, bindvar_dict_x)
         indexes_col_names, indexes_rows, indexes_row_count = self.run_plsql()
 
         # Return the index information.
@@ -889,24 +875,23 @@ class OracleClient(object):
         """
 
         # The query for finding the columns in this index.
-        plsql_x = """SELECT ic.column_position, column_name, descend,
-                            column_expression
-                     FROM user_ind_columns ic
-                          LEFT OUTER JOIN user_ind_expressions ie
-                     ON ic.column_position = ie.column_position
-                     AND ic.index_name = ie.index_name
-                     WHERE ic.index_name = :index_name
-                     ORDER BY ic.column_position"""
-        bind_var_dict_x = {"index_name": index_name}
+        plsql_x = """
+        SELECT ic.column_position, column_name, descend, column_expression
+        FROM user_ind_columns ic LEFT OUTER JOIN user_ind_expressions ie
+        ON ic.column_position = ie.column_position
+        AND ic.index_name = ie.index_name
+        WHERE ic.index_name = :index_name
+        ORDER BY ic.column_position"""
+        bindvar_dict_x = {"index_name": index_name}
 
         # Execute the PL/SQL.
-        self.set_plsql_text(plsql_x, bind_var_dict_x)
+        self.set_plsql_text(plsql_x, bindvar_dict_x)
         ind_col_col_names, ind_col_rows, ind_col_row_count = self.run_plsql()
 
         # Return the information about this index.
         return ind_col_col_names, ind_col_rows
 
-    def oracle_table_schema(self, colsep=',') -> None:
+    def oracle_table_schema(self, colsep='|') -> None:
         """ Print the schema for a table.
 
         Parameters:
@@ -916,32 +901,41 @@ class OracleClient(object):
         # Find tables
         tables = self.find_tables()
 
-        # Ask end-user to choose a table.
-        prompt = '\nHere are the tables available to you:\n'
-        for count, table in enumerate(tables):
-            prompt += str(count) + ': ' + table + '\n'
-        prompt += ('Enter the number for the table you want info about,\n'
-                   'Or enter "Q" to quit:\n')
-        choice = input(prompt).strip().upper()
+        if len(tables) == 0:
+            print('You own no tables!  Nothing to see!')
+            return
+        elif len(tables) == 1:
+            # Only one table.  Choose that table to show.
+            my_table = tables[0]
+        else:
+            # Ask end-user to choose a table.
+            prompt = '\nHere are the tables available to you:\n'
+            for index, table in enumerate(tables):
+                prompt += str(index) + ': ' + table + '\n'
+            prompt += ('Enter the number for the table you want info about,\n'
+                       'Or enter "Q" to quit:\n')
 
-        # Interpret the choice.
-        if choice == "Q":
-            exit(0)
-        choice = int(choice)
-        if choice not in range(len(tables)):
-            exit(0)
-        my_table = tables[choice]
-        tables = None
+            # Keep looping until valid choice made.
+            while True:
+                choice = input(prompt).strip().upper()
+                # Interpret the choice.
+                if choice == "Q":
+                    print('Quitting as requested.')
+                    exit(0)
+                choice = int(choice)
+                if choice in range(len(tables)):
+                    my_table = tables[choice]
+                    break
+                else:
+                    print('Invalid choice, please try again.')
 
         # Set up to write output.
-        output_writer = OutputWriter(out_file_name='', align_col=True,
-                                     col_sep='|')
+        output_writerx = OutputWriter(out_file_name='', align_col=True,
+                                      col_sep=colsep)
 
         # Find and print columns in this table.
         columns_col_names, columns_rows = self.find_table_columns(my_table)
-        output_writer.write_rows(columns_rows, columns_col_names)
-        columns_col_names = None
-        columns_rows = None
+        output_writerx.write_rows(columns_rows, columns_col_names)
 
         # Find all indexes in this table.
         indexes_col_names, indexes_rows = self.find_indexes(my_table)
@@ -950,8 +944,8 @@ class OracleClient(object):
         indexes_col_names.append('INDEX_COLUMNS')
 
         # Go through indexes, add index_columns to end of each index/row.
-        for count, index in enumerate(indexes_rows):
-            index_name = index[0]
+        for count, index_row in enumerate(indexes_rows):
+            index_name = index_row[0]
             _, ind_col_rows = self.find_index_columns(index_name)
             # Concatenate names of columns in index.  In function-based indexes,
             # use user_ind_expressions.column_expression instead of
@@ -965,29 +959,92 @@ class OracleClient(object):
                 else:
                     index_columns += column_expr + ' ' + descend
             index_columns = '(' + index_columns + ')'
-            _ = None
-            ind_col_rows = None
             # Add index_columns to end of each index/row (index is a tuple!).
-            indexes_rows[count] = index + (index_columns,)
+            indexes_rows[count] = index_row + (index_columns,)
 
+        # Print output.
         print()
-        output_writer.write_rows(indexes_rows, indexes_col_names)
-        output_writer.finish_up()
-        output_writer = None
-        indexes_col_names = None
-        indexes_rows = None
+        output_writerx.write_rows(indexes_rows, indexes_col_names)
+        output_writerx.finish_up()
+        return
 
-    def oracle_view_schema(self) -> None:
+    def oracle_view_schema(self, colsep='|') -> None:
         """ Print the schema for a view.
 
         Parameters:
+            colsep (str): column separator to use.
         Returns:
         """
         # Find views
-        views = self.find_views()
+        views_col_names, views = self.find_views()
+        # views_col_names = ['VIEW_NAME', 'VIEW_SQL']
 
+        # Create mapping from column name to index, so I can access items by
+        # column name instead of by index.
+        columns = {name: index for index, name in enumerate(views_col_names)}
+
+        if len(views) == 0:
+            print('You own no views!  Nothing to see!')
+            return
+        elif len(views) == 1:
+            # Only one view.  Choose it.
+            choice = 0
+        else:
+            # Ask end-user to choose a view.
+            prompt = '\nHere are the views available to you:\n'
+            for index, (view_name, view_sql) in enumerate(views):
+                prompt += str(index) + ': ' + view_name + '\n'
+            prompt += ('Enter the number for the view you want info about,\n'
+                       'Or enter "Q" to quit:\n')
+
+            # Keep looping until valid choice made.
+            while True:
+                choice = input(prompt).strip().upper()
+                # Interpret the choice.
+                if choice == "Q":
+                    print('Quitting as requested.')
+                    exit(0)
+                choice = int(choice)
+                if choice in range(len(views)):
+                    break
+                else:
+                    print('Invalid choice, please try again.')
+
+        # Unpack information.
+        my_view_name = views[choice][columns['VIEW_NAME']]
+        my_view_sql = views[choice][columns['VIEW_SQL']]
+
+        # Print the sql for this view.
+        print('\nHere is the SQL for this view:\n"{}"'.format(my_view_sql))
+
+        # Set up to write output.
+        output_writerx = OutputWriter(out_file_name='', align_col=True,
+                                      col_sep=colsep)
+
+        # Find and print columns in this view.
+        columns_col_names, columns_rows = self.find_view_columns(my_view_name)
+        output_writerx.write_rows(columns_rows, columns_col_names)
+        output_writerx.finish_up()
+        return
 
 # -------- CUSTOM STAND-ALONE FUNCTIONS
+
+
+def no_none(might_be_none: str, if_its_none: str) -> str:
+    """ If argument is None, change it.
+
+    Parameters:
+        might_be_none (str): string that might be None.
+        if_its_none (str): if might_be_none is None, change it to this.
+    Returns:
+        its_not_none (str): guaranteed to not be None.
+    """
+    if might_be_none is None:
+        its_not_none = if_its_none
+    else:
+        its_not_none = might_be_none
+
+    return its_not_none
 
 
 def print_stacktrace() -> None:
@@ -998,6 +1055,7 @@ def print_stacktrace() -> None:
     """
     print()
     print_exception(*sys.exc_info(), limit=None, file=sys.stdout)
+    return
 
 
 def exception_raised() -> bool:
@@ -1037,11 +1095,9 @@ def run_sqlplus(plsql: str) -> list:
     Returns:
         plsql_output (list): rows of output.
     """
-
     p = subprocess.Popen(['sqlplus', '/nolog'],  stdin=subprocess.PIPE,
                          stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     (stdout, stderr) = p.communicate(plsql.encode('utf-8'))
-
     return stdout.decode('utf-8').split("\n")
 
 # -------- IF __NAME__ ....
@@ -1110,8 +1166,12 @@ if __name__ == '__main__':
     # Pass in database connection to my Oracle Client.
     my_oracle_client = OracleClient(database1)
 
-    # See the Oracle schema for my login.
+    # See the Oracle table schema for my login.
     my_oracle_client.oracle_table_schema(colsep=my_colsep)
+    print()
+
+    # See the Oracle view schema for my login.
+    my_oracle_client.oracle_view_schema(colsep=my_colsep)
     print()
 
     # Pass in text of PL/SQL and a dict of bind variables and their values.
@@ -1119,8 +1179,8 @@ if __name__ == '__main__':
                FROM products p INNER JOIN categories c
                ON p.category = c.category
                WHERE actor = :actor"""
-    bind_var_dict1 = {'actor': 'CHEVY FOSTER'}
-    my_oracle_client.set_plsql_text(plsql1, bind_var_dict1)
+    bindvar_dict1 = {'actor': 'CHEVY FOSTER'}
+    my_oracle_client.set_plsql_text(plsql1, bindvar_dict1)
 
     # Execute the PL/SQL.
     col_names1, rows1, row_count1 = my_oracle_client.run_plsql()
@@ -1142,10 +1202,10 @@ if __name__ == '__main__':
 
     # From command line, read in PL/SQL & dict of bind variables & their values.
     my_oracle_client.get_plsql_text_from_command_line()
-    my_oracle_client.get_bind_vars_from_command_line()
+    my_oracle_client.get_bindvars_from_command_line()
 
     # Execute the PL/SQL.
-    col_names1, rows1, row_count1 = my_oracle_client.run_plsql()
+    col_names2, rows2, row_count2 = my_oracle_client.run_plsql()
 
     # Set up to write output.
     output_writer = OutputWriter(out_file_name='', align_col=True,
@@ -1154,12 +1214,12 @@ if __name__ == '__main__':
     output_writer.get_col_sep()
     output_writer.get_out_file_name()
     # Show the results.
-    output_writer.write_rows(rows1, col_names1)
+    output_writer.write_rows(rows2, col_names2)
 
     # Clean up.
     output_writer.finish_up()
-    col_names1 = None
-    rows1 = None
+    col_names2 = None
+    rows2 = None
     print()
     database1.close_connection()
     database1.print_connection_status()
