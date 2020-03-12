@@ -7,7 +7,7 @@ REPOSITORY: https://github.com/DavidJLambert/Python-Universal-DB-Client
 
 AUTHOR: David J. Lambert
 
-VERSION: 0.4.1
+VERSION: 0.4.2
 
 DATE: Mar 11, 2020
 
@@ -76,7 +76,6 @@ from getpass import getpass
 from datetime import datetime
 import sys
 from os import path
-import cx_Oracle
 import subprocess
 import struct
 import platform
@@ -116,7 +115,8 @@ class DBInstance(object):
         hostname (str): the hostname of this database.
         port_num (int): the port this database listens on.
         instance (str): the name of this database instance.
-        connection_string (str): the connection string for this database.
+        db_library: reference to the library that was imported for this db_type.
+        db_library_name (str): name of the library imported for this db_type.
         connection: the handle to this database. I set connection = None when
                     connection closed, this is not default behavior.
     """
@@ -133,29 +133,85 @@ class DBInstance(object):
             instance (str): the name of this database instance.
         Returns:
         """
-        # Get database instance information.
+        # Supported database types.
+        oracle = 'oracle'
+        mysql = 'mysql'
+        sql_server = 'sql server'
+        postgresql = 'postgresql'
+        access = 'access'
+        sqlite = 'sqlite'
+        db_types = [oracle, mysql, sql_server, postgresql, access, sqlite]
+
+        uses_conn_str = set(db_types) - {mysql}
+
+        # Check if db_type valid.
+        if db_type not in db_types:
+            print('Invalid database type "{}".'.format(db_type))
+
+        # Libraries for supported database types.
+        map_type_to_lib = {oracle: 'cx_Oracle',
+                           mysql: 'pymysql',
+                           sql_server: 'pyodbc',
+                           postgresql: 'psycopg2',
+                           access: 'pyodbc',
+                           sqlite: 'sqlite3'}
+
+        # Import appropriate library.
+        db_library = __import__(map_type_to_lib[db_type])
+
+        # Database connection string.
+        if db_type == mysql:
+            conn_str = ''
+            z = ''
+        elif db_type == sql_server:
+            conn_str = r'DRIVER={SQL Server};'
+            z = r'UID={};PWD={};SERVER={};PORT={};DATABASE={}'
+        elif db_type == oracle:
+            conn_str = ''
+            z = '{}/{}@{}:{}/{}'
+        elif db_type == postgresql:
+            conn_str = ''
+            z = "user='{}' password='{}' host='{}' port='{}' dbname='{}'"
+        elif db_type == access:
+            conn_str = r'DRIVER={Microsoft Access Driver (*.mdb, *.accdb)};'
+            z = r'DBQ={};'
+        elif db_type == sqlite:
+            conn_str = ''
+            z = '{}'
+        else:
+            print('Unknown db type {}, aborting.'.format(db_type))
+
+        if db_type in {sql_server, oracle, postgresql}:
+            conn_str += z.format(username, password, hostname, port_num,
+                                 instance)
+        elif db_type in {sqlite, access}:
+            conn_str += z.format(instance)
+
+        # Connect to database instance.
+        self.connection = None
+        try:
+            if db_type in uses_conn_str:
+                self.connection = db_library.connect(conn_str)
+            else:
+                self.connection = db_library.connect(username, password,
+                                                     hostname, port_num,
+                                                     instance)
+            print('Successfully connected to database.')
+        except db_library.Error:
+            print_stacktrace()
+            print('Failed to connect to database.')
+            exit(1)
+
+        # Set database instance information.
         self.db_type: str = db_type
         self.username: str = username
         self.password: str = password
         self.hostname: str = hostname
         self.port_num: int = port_num
         self.instance: str = instance
-        # Get ready to connect to database instance.
-        z = '{}/{}@{}:{}/{}'.format(username, password, hostname, port_num,
-                                    instance)
-        self.connection_string = z
+        self.db_library = db_library
+        self.db_library_name = map_type_to_lib[db_type]
 
-        # Connect to database instance.
-        self.connection = None
-        z = '{} to instance "{}" on host "{}".'
-        z = z.format('{}', self.get_instance(), self.get_hostname())
-        try:
-            self.connection = cx_Oracle.connect(self.connection_string)
-            print(z.format('Successfully connected'))
-        except cx_Oracle.Error:
-            print_stacktrace()
-            print(z.format('Failed to connect'))
-            exit(1)
         return
 
     # METHODS INVOLVING THE DATABASE CONNECTION.
@@ -172,7 +228,7 @@ class DBInstance(object):
             self.connection.close()
             self.connection = None
             print(z.format('Successfully disconnected'))
-        except cx_Oracle.Error:
+        except db_library.Error:
             print_stacktrace()
             print(z.format('Failed to disconnect'))
             exit(1)
@@ -238,6 +294,16 @@ class DBInstance(object):
         z = 'The database type is "{}".'
         print(z.format(self.get_db_type()))
         return
+
+    def get_db_library_name(self) -> str:
+        """ Method to return the name of the needed database library.
+
+        Parameters:
+        Returns:
+            type (str): database software type.
+        """
+        print('in get_db_library: ', self.db_library_name)
+        return self.db_library_name
 
     def get_db_version(self) -> str:
         """ Method to return the database software version.
@@ -549,13 +615,17 @@ class DBClient(object):
         cursor: the cursor to execute this SQL on.
             I set cursor = None when cursor closed.
     """
-    def __init__(self, db_instance) -> None:
+    def __init__(self, db_instance, db_type, db_library_name) -> None:
         """ Constructor method for this class.
 
         Parameters:
             db_instance: the handle for a database instance to use.
         Returns:
         """
+        self.db_type = db_type
+        db_library = __import__(db_library_name)
+        self.db_library = db_library
+
         # Get database instance object and cursor.
         self.db_instance = db_instance
         self.cursor = self.db_instance.create_cursor()
@@ -744,7 +814,7 @@ class DBClient(object):
 
                     # In Oracle, cursor.rowcount = 0, so get row count directly.
                     row_count = len(all_rows)
-            except cx_Oracle.Error:
+            except self.db_library.Error:
                 print_stacktrace()
             finally:
                 return col_names, all_rows, row_count
@@ -1135,6 +1205,7 @@ def run_sql_cmdline(sql: str) -> list:
 
 if __name__ == '__main__':
     # GET DATABASE INSTANCE TO USE.
+    db_type1 = 'oracle'
     username1 = 'ds2'
     password1 = ask_for_password(username1)
     hostname1 = 'DESKTOP-C54UGSE.attlocal.net'
@@ -1192,13 +1263,14 @@ if __name__ == '__main__':
 
     # CONNECT TO DATABASE INSTANCE SPECIFIED ABOVE.
     print('\nCONNECTING TO DATABASE...')
-    db_instance1 = DBInstance('Oracle', username1, password1, hostname1,
+    db_instance1 = DBInstance(db_type1, username1, password1, hostname1,
                               port_num1, instance1)
     db_instance1.print_all_connection_parameters()
+    db_library_name1 = db_instance1.get_db_library_name()
 
     # CREATE DATABASE CLIENT OBJECT.
     print('\nGETTING DATABASE CLIENT OBJECT...')
-    my_db_client = DBClient(db_instance1)
+    my_db_client = DBClient(db_instance1, db_type1, db_library_name1)
 
     # See the database table schema for my login.
     print('\nSEE THE COLUMNS AND INDEXES OF ONE TABLE...')

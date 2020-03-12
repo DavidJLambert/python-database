@@ -484,7 +484,7 @@ def connect_to_db(db_type, db_host, db_port, db_instance, db_path, db_user,
     # Dynamic import of connection library for current db type.
     db_library = __import__(map_type_to_lib[db_type])
 
-    if db_type not in db_uses_conn_str:
+    if db_type == mysql:
         conn_str = ''
         z = ''
     elif db_type == sql_server:
