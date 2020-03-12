@@ -7,7 +7,7 @@ REPOSITORY: https://github.com/DavidJLambert/Python-Universal-DB-Client
 
 AUTHOR: David J. Lambert
 
-VERSION: 0.4.2
+VERSION: 0.4.3
 
 DATE: Mar 11, 2020
 
@@ -71,35 +71,31 @@ SAMPLE DATABASES TO TEST THIS PROGRAM ON:
 # -------- IMPORTS
 
 from __future__ import print_function
-from traceback import print_exception
-from getpass import getpass
-from datetime import datetime
 import sys
-from os import path
-import subprocess
-import struct
-import platform
 
 # -------- CREATE AND INITIALIZE VARIABLES
 
 ARRAY_SIZE = 20
 
-# -------- OS VERSION STUFF
+# -------- OS AND PYTHON VERSION STUFF
 
-os_info = platform.uname()
-q = ('OS: {}\nHost Name: {}\nOS Major Version: {}\nOS Full Version: {}'
-     '\nProcessor Type: {}\nProcessor: {}')
-q = q.format(os_info.system, os_info.node, os_info.release, os_info.version,
-             os_info.machine, os_info.processor)
-print(q)
+if True:
+    # Limit scope of these imports to this block.
+    from platform import uname, python_implementation
+    from struct import calcsize
 
-# -------- PYTHON VERSION STUFF
+    z = ('OS: {}\nHost Name: {}\nOS Major Version: {}\nOS Full Version: {}'
+         '\nProcessor Type: {}\nProcessor: {}')
+    u = uname()
+    z = z.format(u.system, u.node, u.release, u.version, u.machine, u.processor)
+    print(z)
 
-sys_version_info = sys.version_info
-py_bits = 8*struct.calcsize("P")
-py_version = '.'.join(str(x) for x in sys_version_info)
-py_type = platform.python_implementation()
-print('\n{} Version {}, {} bits.'.format(py_type, py_version, py_bits))
+    sys_version_info = sys.version_info
+    py_bits = 8 * calcsize("P")
+    py_version = '.'.join(str(x) for x in sys_version_info)
+    py_type = python_implementation()
+    print('\n{} Version {}, {} bits.'.format(py_type, py_version, py_bits))
+
 
 # -------- CUSTOM CLASSES
 
@@ -228,7 +224,7 @@ class DBInstance(object):
             self.connection.close()
             self.connection = None
             print(z.format('Successfully disconnected'))
-        except db_library.Error:
+        except self.db_library.Error:
             print_stacktrace()
             print(z.format('Failed to disconnect'))
             exit(1)
@@ -511,6 +507,7 @@ class OutputWriter(object):
         Parameters:
         Returns:
         """
+        from os.path import dirname, isdir
         prompt = ('\nEnter the name and relative or absolute'
                   '\nlocation of the file to write output to.'
                   '\nOr hit Return to print to the standard output:\n')
@@ -521,8 +518,8 @@ class OutputWriter(object):
                 out_file = sys.stdout
                 break
             else:
-                dir_name = path.dirname(out_file_name)
-                if path.isdir(dir_name):
+                dir_name = dirname(out_file_name)
+                if isdir(dir_name):
                     try:
                         out_file = open(out_file_name, 'w')
                         break
@@ -699,6 +696,7 @@ class DBClient(object):
         Parameters:
         Returns:
         """
+        from datetime import datetime
         # Prompts for calling input().
         prompt_name = ("\nEnter a bind variable name (omit the colon)."
                        "\nOr hit Return when done entering bind variables:\n")
@@ -1153,19 +1151,10 @@ def print_stacktrace() -> None:
     Parameters:
     Returns:
     """
+    from traceback import print_exception
     print()
     print_exception(*sys.exc_info(), limit=None, file=sys.stdout)
     return
-
-
-def exception_raised() -> bool:
-    """ Has an Exception been raised but not handled?
-
-    Parameters:
-    Returns:
-        (boolean) whether or not an Exception has been raised.
-    """
-    return sys.exc_info() != (None, None, None)
 
 
 def ask_for_password(username: str) -> str:
@@ -1176,6 +1165,7 @@ def ask_for_password(username: str) -> str:
     Returns:
         password (str): the password for "username".
     """
+    from getpass import getpass
     prompt = "\nEnter {}'s password: ".format(username)  # Accept anything.
     if sys.stdin.isatty():
         # getpass works in terminal windows, but hangs in PyCharm (to fix, do
@@ -1195,8 +1185,8 @@ def run_sql_cmdline(sql: str) -> list:
     Returns:
         sql_output (list): rows of output.
     """
-    p = subprocess.Popen(['sqlplus', '/nolog'],  stdin=subprocess.PIPE,
-                         stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    from subprocess import Popen, PIPE
+    p = Popen(['sqlplus', '/nolog'],  stdin=PIPE, stdout=PIPE, stderr=PIPE)
     (stdout, stderr) = p.communicate(sql.encode('utf-8'))
     return stdout.decode('utf-8').split("\n")
 
