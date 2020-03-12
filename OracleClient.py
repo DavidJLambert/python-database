@@ -7,9 +7,9 @@ REPOSITORY: https://github.com/DavidJLambert/Python-Universal-DB-Client
 
 AUTHOR: David J. Lambert
 
-VERSION: 0.4.3
+VERSION: 0.4.4
 
-DATE: Mar 11, 2020
+DATE: Mar 12, 2020
 
 PURPOSE:
   A sample of my Python coding, to demonstrate that I can write decent Python,
@@ -84,11 +84,11 @@ if True:
     from platform import uname, python_implementation
     from struct import calcsize
 
-    z = ('OS: {}\nHost Name: {}\nOS Major Version: {}\nOS Full Version: {}'
+    q = ('OS: {}\nHost Name: {}\nOS Major Version: {}\nOS Full Version: {}'
          '\nProcessor Type: {}\nProcessor: {}')
     u = uname()
-    z = z.format(u.system, u.node, u.release, u.version, u.machine, u.processor)
-    print(z)
+    q = q.format(u.system, u.node, u.release, u.version, u.machine, u.processor)
+    print(q)
 
     sys_version_info = sys.version_info
     py_bits = 8 * calcsize("P")
@@ -156,23 +156,21 @@ class DBInstance(object):
         db_library = __import__(map_type_to_lib[db_type])
 
         # Database connection string.
+        conn_str = ''
+        z = ''
         if db_type == mysql:
-            conn_str = ''
-            z = ''
+            pass
         elif db_type == sql_server:
             conn_str = r'DRIVER={SQL Server};'
             z = r'UID={};PWD={};SERVER={};PORT={};DATABASE={}'
         elif db_type == oracle:
-            conn_str = ''
             z = '{}/{}@{}:{}/{}'
         elif db_type == postgresql:
-            conn_str = ''
             z = "user='{}' password='{}' host='{}' port='{}' dbname='{}'"
         elif db_type == access:
             conn_str = r'DRIVER={Microsoft Access Driver (*.mdb, *.accdb)};'
             z = r'DBQ={};'
         elif db_type == sqlite:
-            conn_str = ''
             z = '{}'
         else:
             print('Unknown db type {}, aborting.'.format(db_type))
@@ -219,7 +217,7 @@ class DBInstance(object):
         Returns:
         """
         z = '\n{} from instance "{}" on host "{}".'
-        z = z.format('{}', self.get_instance(), self.get_hostname())
+        z = z.format('{}', self.instance, self.hostname)
         try:
             self.connection.close()
             self.connection = None
@@ -247,15 +245,6 @@ class DBInstance(object):
         """
         return self.connection.commit()
 
-    def get_connection_status(self) -> bool:
-        """ Method that returns boolean saying if connected to this database.
-
-        Parameters:
-        Returns:
-            Boolean: whether or not connected to this database.
-        """
-        return self.connection is not None
-
     def print_connection_status(self) -> None:
         """ Method that prints whether or not connected to this database.
 
@@ -263,33 +252,14 @@ class DBInstance(object):
         Returns:
         """
         z = 'Connection status for instance "{}", host "{}": {}connected.'
-        z = z.format(self.get_instance(), self.get_hostname(), '{}')
-        if self.get_connection_status():
+        z = z.format(self.instance, self.hostname, '{}')
+        if self.connection is not None:
             print(z.format(''))
         else:
             print(z.format('not '))
         return
 
     # DATABASE INFORMATION METHODS.
-
-    def get_db_type(self) -> str:
-        """ Method to return the database software type.
-
-        Parameters:
-        Returns:
-            type (str): database software type.
-        """
-        return self.db_type
-
-    def print_db_type(self) -> None:
-        """ Method to print the database software type.
-
-        Parameters:
-        Returns:
-        """
-        z = 'The database type is "{}".'
-        print(z.format(self.get_db_type()))
-        return
 
     def get_db_library_name(self) -> str:
         """ Method to return the name of the needed database library.
@@ -298,99 +268,7 @@ class DBInstance(object):
         Returns:
             type (str): database software type.
         """
-        print('in get_db_library: ', self.db_library_name)
         return self.db_library_name
-
-    def get_db_version(self) -> str:
-        """ Method to return the database software version.
-
-        Parameters:
-        Returns:
-            version (str): Database software version.
-        """
-        return self.connection.version
-
-    def print_db_version(self) -> None:
-        """ Method to print the database software version.
-
-        Parameters:
-        Returns:
-        """
-        z = 'The database software version is "{}".'
-        print(z.format(self.get_db_version()))
-        return
-
-    def get_username(self) -> str:
-        """ Method to return username connecting to this database.
-
-        Parameters:
-        Returns:
-            username (str): username connecting to this database.
-        """
-        return self.username
-
-    def print_username(self) -> None:
-        """ Method to print username connecting to this database.
-
-        Parameters:
-        Returns:
-        """
-        print('The database username is "{}".'.format(self.get_username()))
-        return
-
-    def get_hostname(self) -> str:
-        """ Method to return hostname of this database.
-
-        Parameters:
-        Returns:
-            hostname (str): hostname of this database.
-        """
-        return self.hostname
-
-    def print_hostname(self) -> None:
-        """ Method to print hostname of this database.
-
-        Parameters:
-        Returns:
-        """
-        print('The database hostname is "{}".'.format(self.get_hostname()))
-        return
-
-    def get_port_num(self) -> int:
-        """ Method to return the port number this database listens on.
-
-        Parameters:
-        Returns:
-            port_num (int): the port number this database listens on.
-        """
-        return self.port_num
-
-    def print_port_num(self) -> None:
-        """ Method to print port_num this database listens on.
-
-        Parameters:
-        Returns:
-        """
-        print('The database port number is {}.'.format(self.get_port_num()))
-        return
-
-    def get_instance(self) -> str:
-        """ Method to return instance name of this database.
-
-        Parameters:
-        Returns:
-            instance (str): instance name of this database.
-        """
-        return self.instance
-
-    def print_instance(self) -> None:
-        """ Method to print instance name of this database.
-
-        Parameters:
-        Returns:
-        """
-        print('The database instance is "{}".'.format(self.get_instance()))
-        return
 
     def print_all_connection_parameters(self) -> None:
         """ Method that executes all print methods of this class.
@@ -398,12 +276,12 @@ class DBInstance(object):
         Parameters:
         Returns:
         """
-        self.print_db_type()
-        self.print_db_version()
-        self.print_username()
-        self.print_hostname()
-        self.print_port_num()
-        self.print_instance()
+        print('The database type is "{}".'.format(self.db_type))
+        print('The database software version is "{}".'.format(self.connection.version))
+        print('The database username is "{}".'.format(self.username))
+        print('The database hostname is "{}".'.format(self.hostname))
+        print('The database port number is {}.'.format(self.port_num))
+        print('The database instance is "{}".'.format(self.instance))
         self.print_connection_status()
         return
 
