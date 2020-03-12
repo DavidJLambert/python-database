@@ -485,34 +485,28 @@ def connect_to_db(db_type, db_host, db_port, db_instance, db_path, db_user,
     db_library = __import__(map_type_to_lib[db_type])
 
     if db_type == mysql:
-        conn_str = ''
         z = ''
     elif db_type == sql_server:
-        conn_str = r'DRIVER={SQL Server};'
-        z = r'UID={};PWD={};SERVER={};PORT={};DATABASE={}'
+        z = 'DRIVER={{SQL Server}};UID={};PWD={};SERVER={};PORT={};DATABASE={}'
     elif db_type == oracle:
-        conn_str = ''
         z = '{}/{}@{}:{}/{}'
     elif db_type == postgresql:
-        conn_str = ''
         z = "user='{}' password='{}' host='{}' port='{}' dbname='{}'"
     elif db_type == access:
-        conn_str = r'DRIVER={Microsoft Access Driver (*.mdb, *.accdb)};'
-        z = r'DBQ={};'
+        z = 'DRIVER={{Microsoft Access Driver (*.mdb, *.accdb)}};DBQ={};'
     elif db_type == sqlite:
-        conn_str = ''
         z = '{}'
     else:
         print('Unknown db type {}, aborting.'.format(db_type))
         raise ExceptionUserAnotherDB()
 
     if db_type in {sql_server, oracle, postgresql}:
-        conn_str += z.format(db_user, db_password, db_host, db_port, db_instance)
+        z = z.format(db_user, db_password, db_host, db_port, db_instance)
     elif db_type in db_local:
-        conn_str += z.format(db_path)
+        z = z.format(db_path)
 
     if db_type in db_uses_conn_str:
-        connection = db_library.connect(conn_str)
+        connection = db_library.connect(z)
     else:
         connection = db_library.connect(db_host, db_user, db_password,
                                         db_instance, db_port)
