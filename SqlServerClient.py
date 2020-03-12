@@ -1,61 +1,64 @@
-""" OracleClient.py
+""" SQLServerClient.py
 
 SUMMARY:
-  Class DBClient executes SQL with bind variables.
+  Class DBClient executes SQL with bind variables.  SQl may be ANSI SQL
+  or an extension to SQL, such as T-SQL for SQL Server, or PL/SQL for Oracle.
 
 REPOSITORY: https://github.com/DavidJLambert/Python-Universal-DB-Client
 
 AUTHOR: David J. Lambert
 
-VERSION: 0.4.1
+VERSION: 0.1.0
 
-DATE: Mar 11, 2020
+DATE: Mar 9, 2020
 
 PURPOSE:
   A sample of my Python coding, to demonstrate that I can write decent Python,
   test it, and document it.  I also demonstrate I know relational databases.
 
 DESCRIPTION:
-  Class DBInstance contains all the information needed to log into an Oracle
+  Class DBInstance contains all the information needed to log into a database
   instance, plus it contains the connection handle to that database.
 
-  Class DBClient executes SQL with bind variables, and then prints the results.
-  Its externally useful methods are:
+  Class DBClient executes SQL with bind variables, and then prints
+  out the results.  Its externally useful methods are:
   1)  set_sql: gets the text of SQL to run, including bind variables.
-  2)  get_sql: reads text of SQL to run from a prompt.
-  3)  get_bind_vars: gets the bind variable names and values from a prompt.
-  4)  run_sql: executes SQL, which was read as a text variable (with set_sql)
-      or entered at a prompt (by get_sql and get_bind_vars).
-  5)  database_table_schema: lists all the tables owned by the current login,
+  2)  get_sql_from_os_prompt: reads text of SQL to run from the command line.
+  3)  get_bindvars_from_os_prompt: reads the bind variables and their values
+      from the command line.
+  4)  run_sql: executes SQL, regardless of whether it was read as a text
+      variable (with set_sql) or entered at the command line (by
+      get_sql_from_os_prompt and get_bindvars_from_os_prompt).
+  5)  db_table_schema: lists all the tables owned by the current login,
       all the columns in those tables, and all indexes on those tables.
-  6)  database_view_schema: lists all the views owned by the current login,
-      all the columns in those views, and the SQL for the view.
+  6)  db_view_schema: lists all the views owned by the current login, all
+      the columns in those views, and the SQL for the view.
 
   Class OutputWriter handles all query output to file or to standard output.
 
-  Stand-alone Method run_sql_cmdline runs sqlplus as a subprocess.
+  Stand-alone Method run_sql_cmdline runs a database command line client, such
+  as sqlplus for Oracle or sqlcmd for SQL Server, as a subprocess.
 
   The code has been tested with CRUD statements (Create, Read, Update, Delete).
   There is nothing to prevent the end-user from entering other SQL, such as
   ALTER DATABASE, CREATE VIEW, and BEGIN TRANSACTION, but none have been tested.
 
-  This program loads the entire result set into memory.  Thus, it is unsuitable
-  for large results sets, which may not fit in the host's available RAM.
+  This program loads the result set into memory.  Thus, it is not suitable for
+  results sets that drive the host machine's available RAM to zero.
 
 PROGRAM REQUIREMENTS:
 
-  + For connecting to Oracle, my code uses the cx_Oracle library, available on
-    PyPI.  The cx_Oracle library requires the Oracle client libraries.  Several
-    ways to obtain the Oracle client libraries are documented on
-    https://cx-oracle.readthedocs.io/en/latest/installation.html.
+  + For connecting to SQL Server, my code uses the pyodbc library, which is
+    available on PyPI.  The pyodbc library requires the "Microsoft Access
+    Database Engine 2016 Redistributable", which is available from
+    https://www.microsoft.com/en-us/download/details.aspx?id=54920.
 
-    Cx_Oracle v7.3.0 supports Python versions 2.7 and 3.5-3.8,
-    and Oracle client versions 11.2-19.
+    Pyodbc v4.0.30 supports Python versions 2.7 and 3.4-3.8.
 
 SAMPLE DATABASES TO TEST THIS PROGRAM ON:
-  The sample database has the small version of the Dell DVD Store database,
-  version 2.1, available at http://linux.dell.com/dvdstore.  The data in these
-  tables:
+  The sample database has the same data: the small version of the Dell DVD
+  Store database, version 2.1, available at http://linux.dell.com/dvdstore.
+  The data is in these tables:
 
   - CATEGORIES     --     16 rows
   - CUSTOMERS      -- 20,000 rows
@@ -76,7 +79,7 @@ from getpass import getpass
 from datetime import datetime
 import sys
 from os import path
-import cx_Oracle
+import pyodbc  # MOVE INSIDE OF DBInstance.
 import subprocess
 import struct
 import platform
@@ -85,14 +88,14 @@ import platform
 
 ARRAY_SIZE = 20
 
-# -------- OS VERSION STUFF
+# -------- OS INFORMATION STUFF
 
 os_info = platform.uname()
 q = ('OS: {}\nHost Name: {}\nOS Major Version: {}\nOS Full Version: {}'
      '\nProcessor Type: {}\nProcessor: {}')
-q = q.format(os_info.system, os_info.node, os_info.release, os_info.version,
-             os_info.machine, os_info.processor)
-print(q)
+result = q.format(os_info.system, os_info.node, os_info.release,
+                  os_info.version, os_info.machine, os_info.processor)
+print(result)
 
 # -------- PYTHON VERSION STUFF
 
@@ -100,7 +103,8 @@ sys_version_info = sys.version_info
 py_bits = 8*struct.calcsize("P")
 py_version = '.'.join(str(x) for x in sys_version_info)
 py_type = platform.python_implementation()
-print('\n{} Version {}, {} bits.'.format(py_type, py_version, py_bits))
+q = '\n{} Version {}, {} bits.'
+print(q.format(py_type, py_version, py_bits))
 
 # -------- CUSTOM CLASSES
 
@@ -110,22 +114,21 @@ class DBInstance(object):
         about one database instance (referred to as "this database").
 
     Attributes:
-        db_type (str): the type of database (Oracle, SQL Server, etc).
         username (str): a username for connecting to this database.
         password (str): the password for "username".
         hostname (str): the hostname of this database.
         port_num (int): the port this database listens on.
         instance (str): the name of this database instance.
+        db_type (str)): the type of database software (Oracle, SQL Server)
         connection_string (str): the connection string for this database.
         connection: the handle to this database. I set connection = None when
                     connection closed, this is not default behavior.
     """
-    def __init__(self, db_type: str, username: str, password: str,
-                 hostname: str, port_num: int, instance: str) -> None:
+    def __init__(self, username: str, password: str, hostname: str,
+                 port_num: int, instance: str) -> None:
         """ Constructor method for this class.
 
         Parameters:
-            db_type (str): the type of database (Oracle, SQL Server, etc).
             username (str): the username for the connection to this database.
             password (str): the password for "username".
             hostname (str): the hostname of this database.
@@ -133,32 +136,38 @@ class DBInstance(object):
             instance (str): the name of this database instance.
         Returns:
         """
-        # Get database instance information.
-        self.db_type: str = db_type
+        # Database information.
         self.username: str = username
         self.password: str = password
         self.hostname: str = hostname
         self.port_num: int = port_num
         self.instance: str = instance
-        # Get ready to connect to database instance.
-        z = '{}/{}@{}:{}/{}'.format(username, password, hostname, port_num,
-                                    instance)
-        self.connection_string = z
-
-        # Connect to database instance.
+        self.db_type: str = 'SQL Server'
+        # Get ready to connect to database.
+        z = '{}/{}@{}:{}/{}'
+        self.connection_string = z.format(username, password, hostname,
+                                          port_num, instance)
         self.connection = None
-        z = '{} to instance "{}" on host "{}".'
-        z = z.format('{}', self.get_instance(), self.get_hostname())
-        try:
-            self.connection = cx_Oracle.connect(self.connection_string)
-            print(z.format('Successfully connected'))
-        except cx_Oracle.Error:
-            print_stacktrace()
-            print(z.format('Failed to connect'))
-            exit(1)
         return
 
-    # METHODS INVOLVING THE DATABASE CONNECTION.
+    # DATABASE CONNECTION METHODS.
+
+    def open_connection(self) -> None:
+        """ Method for opening a connection to this database.
+
+        Parameters:
+        Returns:
+        """
+        try:
+            self.connection = pyodbc.connect(self.connection_string)
+            z = 'Successfully connected to instance "{}" on host "{}".'
+            print(z.format(self.get_instance(), self.get_hostname()))
+        except pyodbc.Error:
+            print_stacktrace()
+            z = 'Failed to connect to instance "{}" on host "{}".'
+            print(z.format(self.get_instance(), self.get_hostname()))
+            exit(1)
+        return
 
     def close_connection(self) -> None:
         """ Method to close connection to this database.
@@ -166,34 +175,26 @@ class DBInstance(object):
         Parameters:
         Returns:
         """
-        z = '\n{} from instance "{}" on host "{}".'
-        z = z.format('{}', self.get_instance(), self.get_hostname())
         try:
             self.connection.close()
             self.connection = None
-            print(z.format('Successfully disconnected'))
-        except cx_Oracle.Error:
+            z = '\nSuccessfully disconnected from instance "{}" on host "{}".'
+            print(z.format(self.get_instance(), self.get_hostname()))
+        except pyodbc.Error:
             print_stacktrace()
-            print(z.format('Failed to disconnect'))
+            z = 'Failed to disconnect from instance "{}" on host "{}".'
+            print(z.format(self.get_instance(), self.get_hostname()))
             exit(1)
         return
 
-    def create_cursor(self):
-        """ Method that creates a new cursor, and returns it.
+    def get_connection_object(self):
+        """ Method that returns handle (connection) to this database.
 
         Parameters:
         Returns:
-            cursor: handle to this database.
+            connection: handle to this database.
         """
-        return self.connection.cursor()
-
-    def commit(self):
-        """ Method that issues a commit on this object's connection.
-
-        Parameters:
-        Returns:
-        """
-        return self.connection.commit()
+        return self.connection
 
     def get_connection_status(self) -> bool:
         """ Method that returns boolean saying if connected to this database.
@@ -210,17 +211,16 @@ class DBInstance(object):
         Parameters:
         Returns:
         """
-        z = 'Connection status for instance "{}", host "{}": {}connected.'
-        z = z.format(self.get_instance(), self.get_hostname(), '{}')
         if self.get_connection_status():
-            print(z.format(''))
+            z = 'Connection status for instance "{}", host "{}": connected.'
         else:
-            print(z.format('not '))
+            z = 'Connection status for instance "{}", host "{}": not connected.'
+        print(z.format(self.get_instance(), self.get_hostname()))
         return
 
     # DATABASE INFORMATION METHODS.
 
-    def get_db_type(self) -> str:
+    def get_database_type(self) -> str:
         """ Method to return the database software type.
 
         Parameters:
@@ -229,33 +229,33 @@ class DBInstance(object):
         """
         return self.db_type
 
-    def print_db_type(self) -> None:
+    def print_database_type(self) -> None:
         """ Method to print the database software type.
 
         Parameters:
         Returns:
         """
         z = 'The database type is "{}".'
-        print(z.format(self.get_db_type()))
+        print(z.format(self.get_database_type()))
         return
 
-    def get_db_version(self) -> str:
+    def get_database_version(self) -> str:
         """ Method to return the database software version.
 
         Parameters:
         Returns:
-            version (str): Database software version.
+            version (str): database software version.
         """
         return self.connection.version
 
-    def print_db_version(self) -> None:
+    def print_database_version(self) -> None:
         """ Method to print the database software version.
 
         Parameters:
         Returns:
         """
         z = 'The database software version is "{}".'
-        print(z.format(self.get_db_version()))
+        print(z.format(self.get_database_version()))
         return
 
     def get_username(self) -> str:
@@ -336,8 +336,8 @@ class DBInstance(object):
         Parameters:
         Returns:
         """
-        self.print_db_type()
-        self.print_db_version()
+        self.print_database_type()
+        self.print_database_version()
         self.print_username()
         self.print_hostname()
         self.print_port_num()
@@ -396,16 +396,6 @@ class OutputWriter(object):
         self.col_sep: str = col_sep
         return
 
-    def clean_up(self):
-        """ Close output file, if it exists.
-
-        Parameters:
-        Returns:
-        """
-        if self.out_file_name != '':
-            self.out_file.close()
-        return
-
     def get_align_col(self):
         """ Prompt for align_col: chaice to align or not align columns.
 
@@ -413,19 +403,11 @@ class OutputWriter(object):
         Returns:
         """
         prompt = '\nAlign columns (pad with blanks)?  Enter "Y" or "N":\n'
-        # Keep looping until have acceptable answer.
-        while True:
-            response = input(prompt).strip().upper()
-            if response in 'YT1':
-                print('You chose to align columns.')
-                self.align_col = True
-                break
-            elif response in 'NF0':
-                print('You chose to not align columns.')
-                self.align_col = False
-                break
-            else:
-                print('Invalid answer, please try again.')
+        self.align_col = (input(prompt).strip().upper() in 'YT1')
+        if self.align_col:
+            print('You chose to align columns.')
+        else:
+            print('You chose to not align columns.')
         return
 
     def get_col_sep(self):
@@ -495,8 +477,8 @@ class OutputWriter(object):
                         if not changed:
                             row = list(row)
                             changed = True
-                        # Enclose values containing col_sep in quotes,
-                        # double quotes to escape them.
+                        # Must enclose values containing col_sep in quotes,
+                        # and must double quotes to escape them.
                         row[index2] = "'" + str(column).replace("'", "''") + "'"
                 # Save updated version of row if changed = True.
                 if changed:
@@ -506,7 +488,6 @@ class OutputWriter(object):
         if col_names is not None:
             col_sizes = [len(col_name) for col_name in col_names]
         else:
-            # Not printing column names, use data row 0 to start col_sizes calc.
             col_sizes = [len(row) for row in all_rows[0]]
 
         if self.align_col:
@@ -539,69 +520,78 @@ class OutputWriter(object):
             print('Just wrote output to "{}".'.format(self.out_file_name))
         return
 
+    def finish_up(self):
+        """ Close output file, if it exists.
+
+        Parameters:
+        Returns:
+        """
+        if self.out_file_name != '':
+            self.out_file.close()
+        return
+
 
 class DBClient(object):
     """ Get text of a SQL program with bind variables, then execute it.
 
     Attributes:
         sql (str): the text of a SQL program with bind variables.
-        bind_vars (dict): the bind variables' names and values.
-        cursor: the cursor to execute this SQL on.
-            I set cursor = None when cursor closed.
+        bindvar_dict (dict): the bind variables' names and values.
+        cursor: the cursor for this SQL when it executes. I set cursor = None
+                when cursor closed.
+        connection: the handle to this database.
     """
-    def __init__(self, db_instance) -> None:
+    def __init__(self, database) -> None:
         """ Constructor method for this class.
 
         Parameters:
-            db_instance: the handle for a database instance to use.
+            database: the handle for this database.
         Returns:
         """
-        # Get database instance object and cursor.
-        self.db_instance = db_instance
-        self.cursor = self.db_instance.create_cursor()
+        # Get Connection from my_database object.
+        self.connection = database.get_connection_object()
 
-        # Placeholders for SQL text and bind variables.
+        # Placeholders for SQL text, cursor, dict of bind variable values.
         # To avoid PyCharm warnings about variables defined outside of __init__.
         self.sql: str = ''
-        self.bind_vars = dict()
+        self.cursor = None
+        self.bindvar_dict = dict()
         return
 
-    def clean_up(self) -> None:
+    def cleanup(self) -> None:
         """ Clean up resources before destroying an instance of this class.
 
         Parameters:
         Returns:
         """
-        print('cleaning up')
         if self.cursor is not None:
             self.cursor.close()
             self.cursor = None
-        if self.db_instance is not None:
-            self.db_instance.commit()
-            self.db_instance = None
+        if self.connection is not None:
+            self.connection.commit()
         return
 
-    def set_sql(self, sql: str, bind_vars: dict) -> None:
+    def set_sql(self, sql: str, bindvar_dict: dict) -> None:
         """ Set text of SQL to execute + values of any bind variables in it.
 
         Parameters:
             sql (str): text of the SQL to execute.
-            bind_vars (dict): the bind variables' names and values.
+            bindvar_dict (dict): the bind variables' names and values.
         Returns:
         """
         self.sql: str = sql
-        self.bind_vars: dict = bind_vars
+        self.bindvar_dict: dict = bindvar_dict
         return
 
-    def get_sql(self) -> None:
-        """ Get text of SQL at a prompt.
+    def get_sql_from_os_prompt(self) -> None:
+        """ Get text of SQL at the command line.
 
         Parameters:
         Returns:
         """
         # Get text of SQL program.
         prompt = ('\nEnter the lines of a SQL program.'
-                  '\nHit Return to clean_up entering the SQL.'
+                  '\nHit Return to finish entering the SQL.'
                   '\nAt any point, enter "Q" to Quit this program:\n')
         sql = ''
         while True:
@@ -615,7 +605,7 @@ class DBClient(object):
                 break
             elif response.upper() == 'Q':
                 print('\nQuitting at your request.')
-                self.clean_up()
+                self.cleanup()
                 exit(0)
             else:
                 # Add more text to the current SQL.
@@ -623,14 +613,14 @@ class DBClient(object):
         self.sql = sql.strip()
         return
 
-    def get_bind_vars(self) -> None:
-        """ Get bind variables at a prompt.
+    def get_bindvars_from_os_prompt(self) -> None:
+        """ Get bind variables at the command line.
 
         Parameters:
         Returns:
         """
         # Prompts for calling input().
-        prompt_name = ("\nEnter a bind variable name (omit the colon)."
+        prompt_name = ("\nEnter a bind variable name."
                        "\nOr hit Return when done entering bind variables:\n")
         prompt_type = ("\nEnter the letter of the bind variable's data type:"
                        "\n(T)ext."
@@ -642,7 +632,7 @@ class DBClient(object):
         prompt_date = "Use the date format 'm/d/yyyy'.\n"
 
         # Dict with keys = bind variable names, values = bind variable values.
-        bind_vars = dict()
+        bindvar_dict = dict()
         # One loop per bind variable name/value pair.
         while True:
             # Get bind variable name.
@@ -652,7 +642,7 @@ class DBClient(object):
                 break
             elif bindvar_name.upper() == 'Q':
                 print('\nQuitting at your request.')
-                self.clean_up()
+                self.cleanup()
                 exit(0)
 
             # Get bind variable data type.
@@ -684,14 +674,14 @@ class DBClient(object):
                         print('Invalid date, please try again.')
             else:
                 print('\nProgram bug.')
-                self.clean_up()
+                self.cleanup()
                 exit(0)
 
             # Add bind variable name/value pair to dictionary of bind variables.
-            bind_vars[bindvar_name] = bindvar_val
+            bindvar_dict[bindvar_name] = bindvar_val
 
         # All done!
-        self.bind_vars = bind_vars
+        self.bindvar_dict = bindvar_dict
         return
 
     def run_sql(self) -> (list, list, int):
@@ -712,23 +702,26 @@ class DBClient(object):
         all_rows = None
         row_count = 0
         if not self.sql:
-            # No sql to execute.
+            # No SQL to execute.
             pass
         else:
             try:
                 # Classify SQL.
                 sql_type: str = self.sql.split()[0].upper()
 
+                # Get cursor.
+                self.cursor = self.connection.cursor()
+
                 # Execute SQL.
-                self.cursor.execute(self.sql, self.bind_vars)
-                self.db_instance.commit()
+                self.cursor.execute(self.sql, self.bindvar_dict)
+                self.connection.commit()
 
                 # Get row count.
                 row_count: int = self.cursor.rowcount
 
                 if self.cursor is None:
                     print('\nCursor is None.')
-                    self.clean_up()
+                    self.cleanup()
                     exit(1)
                 elif sql_type in ('INSERT', 'UPDATE', 'DELETE'):
                     pass
@@ -742,11 +735,12 @@ class DBClient(object):
                     # Fetch rows.  Fetchall for large number of rows a problem.
                     all_rows = self.cursor.fetchall()
 
-                    # In Oracle, cursor.rowcount = 0, so get row count directly.
+                    # In SQL Server, cursor.rowcount = 0???, so get row count directly.
                     row_count = len(all_rows)
-            except cx_Oracle.Error:
+            except pyodbc.Error:
                 print_stacktrace()
             finally:
+                self.cleanup()
                 return col_names, all_rows, row_count
 
     # THE REST OF THE METHODS ALL HAVE TO DO WITH SEEING THE DATABASE SCHEMA.
@@ -763,10 +757,10 @@ class DBClient(object):
         sql_x = """SELECT table_name
                      FROM user_tables
                      ORDER BY table_name"""
-        bind_vars_x = dict()
+        bindvar_dict_x = dict()
 
         # Execute the SQL.
-        self.set_sql(sql_x, bind_vars_x)
+        self.set_sql(sql_x, bindvar_dict_x)
         tables_col_names, tables_rows, tables_row_count = self.run_sql()
 
         # Return the list of table names.
@@ -786,10 +780,10 @@ class DBClient(object):
         sql_x = """SELECT view_name, text AS view_sql
                      FROM user_views
                      ORDER BY view_name"""
-        bind_vars_x = dict()
+        bindvar_dict_x = dict()
 
         # Execute the SQL.
-        self.set_sql(sql_x, bind_vars_x)
+        self.set_sql(sql_x, bindvar_dict_x)
         views_col_names, views_rows, views_row_count = self.run_sql()
 
         # Return the list of view names.
@@ -842,8 +836,8 @@ class DBClient(object):
         ORDER BY column_id"""
 
         # Execute the SQL.
-        bind_vars_x = {"table_name": table_name}
-        self.set_sql(sql_x, bind_vars_x)
+        bindvar_dict_x = {"table_name": table_name}
+        self.set_sql(sql_x, bindvar_dict_x)
         columns_col_names, columns_rows, columns_row_count = self.run_sql()
 
         # Replace None by '(null)' everywhere.
@@ -883,10 +877,10 @@ class DBClient(object):
                      FROM user_indexes
                      WHERE table_name = :table_name
                      ORDER BY index_name"""
-        bind_vars_x = {"table_name": table_name}
+        bindvar_dict_x = {"table_name": table_name}
 
         # Execute the SQL.
-        self.set_sql(sql_x, bind_vars_x)
+        self.set_sql(sql_x, bindvar_dict_x)
         indexes_col_names, indexes_rows, indexes_row_count = self.run_sql()
 
         # Return the index information.
@@ -912,10 +906,10 @@ class DBClient(object):
         AND ic.index_name = ie.index_name
         WHERE ic.index_name = :index_name
         ORDER BY ic.column_position"""
-        bind_vars_x = {"index_name": index_name}
+        bindvar_dict_x = {"index_name": index_name}
 
         # Execute the SQL.
-        self.set_sql(sql_x, bind_vars_x)
+        self.set_sql(sql_x, bindvar_dict_x)
         ind_col_col_names, ind_col_rows, ind_col_row_count = self.run_sql()
 
         # Return the information about this index.
@@ -995,7 +989,7 @@ class DBClient(object):
         # Print output.
         print()
         output_writerx.write_rows(indexes_rows, indexes_col_names)
-        output_writerx.clean_up()
+        output_writerx.finish_up()
         return
 
     def database_view_schema(self, colsep='|') -> None:
@@ -1054,7 +1048,7 @@ class DBClient(object):
         # Find and print columns in this view.
         columns_col_names, columns_rows = self.find_view_columns(my_view_name)
         output_writerx.write_rows(columns_rows, columns_col_names)
-        output_writerx.clean_up()
+        output_writerx.finish_up()
         return
 
 # -------- CUSTOM STAND-ALONE FUNCTIONS
@@ -1102,7 +1096,7 @@ def ask_for_password(username: str) -> str:
     """ Method to ask end-user for password for "username".
 
     Parameters:
-        username (str): the username used to connect to this database instance.
+        username (str): the username for the connection to this database.
     Returns:
         password (str): the password for "username".
     """
@@ -1118,14 +1112,14 @@ def ask_for_password(username: str) -> str:
 
 
 def run_sql_cmdline(sql: str) -> list:
-    """ Run SQL against database using sqlplus.
+    """ Run SQL against database using SQL command line.
 
     Parameters:
         sql (str): text of the SQL to run.
     Returns:
         sql_output (list): rows of output.
     """
-    p = subprocess.Popen(['sqlplus', '/nolog'],  stdin=subprocess.PIPE,
+    p = subprocess.Popen(['sqlcmd', '/nolog'],  stdin=subprocess.PIPE,
                          stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     (stdout, stderr) = p.communicate(sql.encode('utf-8'))
     return stdout.decode('utf-8').split("\n")
@@ -1134,18 +1128,17 @@ def run_sql_cmdline(sql: str) -> list:
 
 
 if __name__ == '__main__':
-    # GET DATABASE INSTANCE TO USE.
+    # Get database instance to use.
     username1 = 'ds2'
     password1 = ask_for_password(username1)
     hostname1 = 'DESKTOP-C54UGSE.attlocal.net'
     port_num1 = 1521
     instance1 = 'XE'
 
-    # COLUMN SEPARATOR FOR OUTPUT.
+    # Column separator for output.
     my_colsep = '|'
 
-    # TEXT OF COMMANDS TO RUN IN SQLPLUS.
-    # Explanation of commands:
+    # Text of commands to run on SQL command line.  Explanation of commands:
     # SET SQLPROMPT ""      turn off prompt
     # SET SQLNUMBER OFF     turn off numbers printed for multi-line input
     # SET TRIMOUT ON        trim trailing spaces
@@ -1156,7 +1149,7 @@ if __name__ == '__main__':
     # SET COLSEP "|"        set column separator to pipe character
     # SPOOL <filename>      writes output to <filename> instead of standard out
     # SET TRIMSPOOL ON      trim trailing spaces in output file
-    sql_for_sqlplus = """
+    sql_for_sql_cmdline = """
     SET SQLPROMPT ""
     CONNECT {}/{}@{}:{}/{}
     SET SQLNUMBER OFF
@@ -1179,35 +1172,30 @@ if __name__ == '__main__':
     exit
     """.format(username1, password1, hostname1, port_num1, instance1, my_colsep)
 
-    # RUN ABOVE COMMANDS IN SQLPLUS.
-    print('\nRUNNING COMMANDS IN SQLPLUS...')
-    sqlplus_output = run_sql_cmdline(sql_for_sqlplus)
+    # Run above commands on SQL command line.
+    sqlcmd_output = run_sql_cmdline(sql_for_sql_cmdline)
 
-    # SHOW THE OUTPUT FROM RUNNING ABOVE COMMANDS IN SQLPLUS.
-    # Don't use write_rows, it'll crash because sqlplus output not all columnar.
-    print('\nTHE OUTPUT FROM RUNNING THOSE COMMANDS IN SQLPLUS:')
-    for line in sqlplus_output:
+    # Show the output from running above commands in sqlcmd.
+    # Don't use write_rows, it'll crash because sqlcmd output not all columnar.
+    for line in sqlcmd_output:
         print(line)
-    print('ALL DONE WITH THAT OUTPUT.')
 
-    # CONNECT TO DATABASE INSTANCE SPECIFIED ABOVE.
-    print('\nCONNECTING TO DATABASE...')
-    db_instance1 = DBInstance('Oracle', username1, password1, hostname1,
-                              port_num1, instance1)
-    db_instance1.print_all_connection_parameters()
+    # Set up to connect to database instance specified above.
+    database1 = DBInstance(username1, password1, hostname1, port_num1, instance1)
 
-    # CREATE DATABASE CLIENT OBJECT.
-    print('\nGETTING DATABASE CLIENT OBJECT...')
-    my_db_client = DBClient(db_instance1)
+    # Connect to that database instance.
+    database1.open_connection()
+    database1.print_all_connection_parameters()
+
+    # Pass in database connection to my database client.
+    my_database_client = DBClient(database1)
 
     # See the database table schema for my login.
-    print('\nSEE THE COLUMNS AND INDEXES OF ONE TABLE...')
-    my_db_client.database_table_schema(colsep=my_colsep)
+    my_database_client.database_table_schema(colsep=my_colsep)
     print()
 
     # See the database view schema for my login.
-    print('\nSEE THE DEFINITION AND COLUMNS OF ONE VIEW...')
-    my_db_client.database_view_schema(colsep=my_colsep)
+    my_database_client.database_view_schema(colsep=my_colsep)
     print()
 
     # Pass in text of SQL and a dict of bind variables and their values.
@@ -1215,42 +1203,35 @@ if __name__ == '__main__':
                FROM products p INNER JOIN categories c
                ON p.category = c.category
                WHERE actor = :actor"""
-    print("\nHERE'S SOME SQL:\n{}".format(sql1))
-    bind_vars1 = {'actor': 'CHEVY FOSTER'}
-    print('\nHERE ARE BIND VARIABLES:\n{}'.format(bind_vars1))
-    my_db_client.set_sql(sql1, bind_vars1)
+    bindvar_dict1 = {'actor': 'CHEVY FOSTER'}
+    my_database_client.set_sql(sql1, bindvar_dict1)
 
     # Execute the SQL.
-    print('\nGETTING THE OUTPUT OF THAT SQL:')
-    col_names1, rows1, row_count1 = my_db_client.run_sql()
+    col_names1, rows1, row_count1 = my_database_client.run_sql()
 
     # Set up to write output.
-    print('\nPREPARING TO FORMAT THAT OUTPUT, AND PRINT OR WRITE IT TO FILE.')
     output_writer = OutputWriter(out_file_name='', align_col=True,
                                  col_sep='|')
     output_writer.get_align_col()
     output_writer.get_col_sep()
     output_writer.get_out_file_name()
     # Show the results.
-    print("\nHERE'S THE OUTPUT...")
     output_writer.write_rows(rows1, col_names1)
 
     # Clean up.
-    print('\n\nOK, FORGET ALL THAT.')
-    output_writer.clean_up()
+    output_writer.finish_up()
     col_names1 = None
     rows1 = None
+    print()
 
-    # From a prompt, read in SQL & dict of bind variables & their values.
-    my_db_client.get_sql()
-    my_db_client.get_bind_vars()
+    # From command line, read in SQL & dict of bind variables & their values.
+    my_database_client.get_sql_from_os_prompt()
+    my_database_client.get_bindvars_from_os_prompt()
 
     # Execute the SQL.
-    print('\nGETTING THE OUTPUT OF THAT SQL:')
-    col_names2, rows2, row_count2 = my_db_client.run_sql()
+    col_names2, rows2, row_count2 = my_database_client.run_sql()
 
     # Set up to write output.
-    print('\nPREPARING TO FORMAT THAT OUTPUT, AND PRINT OR WRITE IT TO FILE.')
     output_writer = OutputWriter(out_file_name='', align_col=True,
                                  col_sep='|')
     output_writer.get_align_col()
@@ -1260,9 +1241,9 @@ if __name__ == '__main__':
     output_writer.write_rows(rows2, col_names2)
 
     # Clean up.
-    output_writer.clean_up()
+    output_writer.finish_up()
     col_names2 = None
     rows2 = None
     print()
-    db_instance1.close_connection()
-    db_instance1.print_connection_status()
+    database1.close_connection()
+    database1.print_connection_status()
