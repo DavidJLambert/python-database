@@ -7,7 +7,7 @@ REPOSITORY: https://github.com/DavidJLambert/Python-Universal-DB-Client
 
 AUTHOR: David J. Lambert
 
-VERSION: 0.4.6
+VERSION: 0.4.7
 
 DATE: Mar 12, 2020
 
@@ -16,7 +16,7 @@ PURPOSE:
   test it, and document it.  I also demonstrate I know relational databases.
 
 DESCRIPTION:
-  Class DBInstance encapsulates all the information needed to log into an Oracle
+  Class DBInstance encapsulates all the info needed to log into a database
   instance, plus it encapsulates the connection handle to that database.
   Its externally useful methods are:
   1)  print_all_connection_parameters: prints all the connection parameters.
@@ -43,7 +43,9 @@ DESCRIPTION:
   4)  write_rows: write output to location chosen in get_out_file_name.
   5)  olose_output_file: if writing to output file, close it.
 
-  Stand-alone function run_sql_cmdline runs sqlplus as a subprocess.
+  Stand-alone function run_sql_cmdline runs the database command line client
+  (sqlplus, sqlcmd, etc.) as a subprocess.
+
   Stand-alone function ask_for_password(username) prompts for the password for
   the username provided as an argument.
 
@@ -89,6 +91,19 @@ import sys
 
 ARRAY_SIZE = 20
 
+# Supported database types.
+oracle = 'oracle'
+mysql = 'mysql'
+sql_server = 'sql server'
+postgresql = 'postgresql'
+access = 'access'
+sqlite = 'sqlite'
+db_types = [oracle, mysql, sql_server, postgresql, access, sqlite]
+
+uses_connection_string = set(db_types) - {mysql}
+
+file_databases = {access, sqlite}
+
 # -------- OS AND PYTHON VERSION STUFF
 
 if True:
@@ -118,6 +133,7 @@ class DBInstance(object):
 
     Attributes:
         db_type (str): the type of database (Oracle, SQL Server, etc).
+        db_path (str): the path of the database file, for SQLite and Access.
         username (str): a username for connecting to this database.
         password (str): the password for "username".
         hostname (str): the hostname of this database.
@@ -128,12 +144,13 @@ class DBInstance(object):
         connection: the handle to this database. I set connection = None when
                     connection closed, this is not default behavior.
     """
-    def __init__(self, db_type: str, username: str, password: str,
+    def __init__(self, db_type: str, db_path: str, username: str, password: str,
                  hostname: str, port_num: int, instance: str) -> None:
         """ Constructor method for this class.
 
         Parameters:
             db_type (str): the type of database (Oracle, SQL Server, etc).
+            db_path (str): the path of the database file, for SQLite and Access.
             username (str): the username for the connection to this database.
             password (str): the password for "username".
             hostname (str): the hostname of this database.
@@ -141,17 +158,6 @@ class DBInstance(object):
             instance (str): the name of this database instance.
         Returns:
         """
-        # Supported database types.
-        oracle = 'oracle'
-        mysql = 'mysql'
-        sql_server = 'sql server'
-        postgresql = 'postgresql'
-        access = 'access'
-        sqlite = 'sqlite'
-        db_types = [oracle, mysql, sql_server, postgresql, access, sqlite]
-
-        uses_connection_string = set(db_types) - {mysql}
-
         # Check if db_type valid.
         if db_type not in db_types:
             print('Invalid database type "{}".'.format(db_type))
@@ -186,8 +192,8 @@ class DBInstance(object):
 
         if db_type in {sql_server, oracle, postgresql}:
             z = z.format(username, password, hostname, port_num, instance)
-        elif db_type in {sqlite, access}:
-            z = z.format(instance)
+        elif db_type in file_databases:
+            z = z.format(db_path)
 
         # Connect to database instance.
         self.connection = None
@@ -205,6 +211,7 @@ class DBInstance(object):
 
         # Set database instance information.
         self.db_type: str = db_type
+        self.db_path: str = db_path
         self.username: str = username
         self.password: str = password
         self.hostname: str = hostname
@@ -293,12 +300,15 @@ class DBInstance(object):
         Returns:
         """
         print('The database type is "{}".'.format(self.db_type))
-        print('The database software version is "{}".'.format(
-            self.connection.version))
-        print('The database username is "{}".'.format(self.username))
-        print('The database hostname is "{}".'.format(self.hostname))
-        print('The database port number is {}.'.format(self.port_num))
-        print('The database instance is "{}".'.format(self.instance))
+        if self.db_type in file_databases:
+            print('The database path is "{}".'.format(self.db_path))
+        else:
+            print('The database software version is "{}".'.format(
+                self.connection.version))
+            print('The database username is "{}".'.format(self.username))
+            print('The database hostname is "{}".'.format(self.hostname))
+            print('The database port number is {}.'.format(self.port_num))
+            print('The database instance is "{}".'.format(self.instance))
         self.print_connection_status()
         return
 
@@ -722,176 +732,6 @@ class DBClient(object):
 
     # THE REST OF THE METHODS ALL HAVE TO DO WITH SEEING THE DATABASE SCHEMA.
 
-    def find_tables(self) -> list:
-        """ Find the tables in this user's schema.
-
-        Parameters:
-        Returns:
-            table_names (list): list of the tables in this user's schema.
-        """
-
-        # The query for finding the tables in this user's schema.
-        sql_x = """SELECT table_name
-                     FROM user_tables
-                     ORDER BY table_name"""
-        bind_vars_x = dict()
-
-        # Execute the SQL.
-        self.set_sql(sql_x, bind_vars_x)
-        tables_col_names, tables_rows, tables_row_count = self.run_sql()
-
-        # Return the list of table names.
-        return [row[0] for row in tables_rows]
-
-    def find_views(self) -> (list, list):
-        """ Find the views in this user's schema.
-
-        Parameters:
-        Returns:
-            views_col_names (list): column names: [view_name, view_sql]
-            view_names (list): list of tuples, each tuple being the columns
-                above for the views in this user's schema.
-        """
-
-        # The query for finding the views in this user's schema.
-        sql_x = """SELECT view_name, text AS view_sql
-                     FROM user_views
-                     ORDER BY view_name"""
-        bind_vars_x = dict()
-
-        # Execute the SQL.
-        self.set_sql(sql_x, bind_vars_x)
-        views_col_names, views_rows, views_row_count = self.run_sql()
-
-        # Return the list of view names.
-        return views_col_names, views_rows
-
-    def find_table_columns(self, table_name: str) -> (list, list):
-        """ Find the columns in a table.
-
-        Parameters:
-            table_name (str): the table to find the columns of.
-        Returns:
-            col_names (list): column names:
-                [column_id, column_name, data_type, nullable, data_default,
-                 comments]
-            rows (list): list of tuples, each tuple holds info about one column,
-                with the column names listed in col_names.
-        """
-
-        # The SQL to find the columns, their order, and their data types.
-        sql_x = """
-        SELECT column_id, c.column_name,
-          case
-            when (data_type LIKE '%CHAR%' OR data_type IN ('RAW','UROWID'))
-              then data_type||'('||c.char_length||
-                   decode(char_used,'B',' BYTE','C',' CHAR',null)||')'
-            when data_type = 'NUMBER'
-              then
-                case
-                  when c.data_precision is null and c.data_scale is null
-                    then 'NUMBER'
-                  when c.data_precision is null and c.data_scale is not null
-                    then 'NUMBER(38,'||c.data_scale||')'
-                  else data_type||'('||c.data_precision||','||c.data_scale||')'
-                  end
-            when data_type = 'BFILE'
-              then 'BINARY FILE LOB (BFILE)'
-            when data_type = 'FLOAT'
-              then data_type||'('||to_char(data_precision)||')'||
-                   decode(data_precision, 126,' (double precision)',
-                   63,' (real)',null)
-            else data_type
-            end data_type,
-            decode(nullable,'Y','Yes','No') nullable,
-            data_default,
-            NVL(comments,'(null)') comments
-        FROM user_tab_cols c, user_col_comments com
-        WHERE c.table_name = :table_name
-        AND c.table_name = com.table_name
-        AND c.column_name = com.column_name
-        ORDER BY column_id"""
-
-        # Execute the SQL.
-        bind_vars_x = {"table_name": table_name}
-        self.set_sql(sql_x, bind_vars_x)
-        columns_col_names, columns_rows, columns_row_count = self.run_sql()
-
-        # Replace None by '(null)' everywhere.
-        columns_rows = [[no_none(x, '(null)') for x in r] for r in columns_rows]
-
-        # Return the column information.
-        return columns_col_names, columns_rows
-
-    def find_view_columns(self, view_name: str) -> (list, list):
-        """ Find the columns in a view.
-
-        Parameters:
-            view_name (str): the table to find the columns of.
-        Returns:
-            col_names (list): column names:
-                [column_id, column_name, data_type, nullable, data_default,
-                 comments]
-            rows (list): list of tuples, each tuple holds info about one column,
-                with the column names listed in col_names.
-        """
-        return self.find_table_columns(view_name)
-
-    def find_indexes(self, table_name: str) -> (list, list):
-        """ Find the indexes in a table.
-
-        Parameters:
-            table_name (str): the table to find the indexes of.
-        Returns:
-            col_names (list): column names:
-                [index_name, index_type, table_type, uniqueness]
-            rows (list): list of tuples, each tuple holds info about one index:
-                tuple = (index_name, index_type, table_type, uniqueness).
-        """
-
-        # The query for finding the index in this table.
-        sql_x = """SELECT index_name, index_type, table_type, uniqueness
-                     FROM user_indexes
-                     WHERE table_name = :table_name
-                     ORDER BY index_name"""
-        bind_vars_x = {"table_name": table_name}
-
-        # Execute the SQL.
-        self.set_sql(sql_x, bind_vars_x)
-        indexes_col_names, indexes_rows, indexes_row_count = self.run_sql()
-
-        # Return the index information.
-        return indexes_col_names, indexes_rows
-
-    def find_index_columns(self, index_name: str) -> (list, list):
-        """ Find the columns in an index.
-
-        Parameters:
-            index_name (str): the index to find the columns in.
-        Returns:
-            col_names (list): column names:
-                [column_position, column_name, descend, column_expression]
-            rows (list): list of tuples, a tuple has info about 1 index column:
-              tuple = (column_position, column_expression/column_name, descend).
-        """
-
-        # The query for finding the columns in this index.
-        sql_x = """
-        SELECT ic.column_position, column_name, descend, column_expression
-        FROM user_ind_columns ic LEFT OUTER JOIN user_ind_expressions ie
-        ON ic.column_position = ie.column_position
-        AND ic.index_name = ie.index_name
-        WHERE ic.index_name = :index_name
-        ORDER BY ic.column_position"""
-        bind_vars_x = {"index_name": index_name}
-
-        # Execute the SQL.
-        self.set_sql(sql_x, bind_vars_x)
-        ind_col_col_names, ind_col_rows, ind_col_row_count = self.run_sql()
-
-        # Return the information about this index.
-        return ind_col_col_names, ind_col_rows
-
     def database_table_schema(self, colsep='|') -> None:
         """ Print the schema for a table.
 
@@ -912,7 +752,7 @@ class DBClient(object):
             # Ask end-user to choose a table.
             prompt = '\nHere are the tables available to you:\n'
             for index, table in enumerate(tables):
-                prompt += str(index) + ': ' + table + '\n'
+                prompt += str(index + 1) + ': ' + table + '\n'
             prompt += ('Enter the number for the table you want info about,\n'
                        'Or enter "Q" to quit:\n')
 
@@ -925,7 +765,7 @@ class DBClient(object):
                     exit(0)
                 choice = int(choice)
                 if choice in range(len(tables)):
-                    my_table = tables[choice]
+                    my_table = tables[choice - 1]
                     break
                 else:
                     print('Invalid choice, please try again.')
@@ -994,7 +834,7 @@ class DBClient(object):
             # Ask end-user to choose a view.
             prompt = '\nHere are the views available to you:\n'
             for index, (view_name, view_sql) in enumerate(views):
-                prompt += str(index) + ': ' + view_name + '\n'
+                prompt += str(index + 1) + ': ' + view_name + '\n'
             prompt += ('Enter the number for the view you want info about,\n'
                        'Or enter "Q" to quit:\n')
 
@@ -1007,6 +847,7 @@ class DBClient(object):
                     exit(0)
                 choice = int(choice)
                 if choice in range(len(views)):
+                    choice -= 1
                     break
                 else:
                     print('Invalid choice, please try again.')
@@ -1027,6 +868,191 @@ class DBClient(object):
         output_writerx.write_rows(columns_rows, columns_col_names)
         output_writerx.close_output_file()
         return
+
+    # EVERYTHING ABOVE IS DATABASE TYPE INDEPENDENT, NOT BELOW.
+
+    def find_tables(self) -> list:
+        """ Find the tables in this user's schema.
+
+        Parameters:
+        Returns:
+            table_names (list): list of the tables in this user's schema.
+        """
+
+        # The query for finding the tables in this user's schema.
+        sql_x = ''
+        bind_vars_x = dict()
+        if self.db_type == oracle:
+            sql_x = """SELECT table_name
+                       FROM user_tables
+                       ORDER BY table_name"""
+
+        # Execute the SQL.
+        self.set_sql(sql_x, bind_vars_x)
+        tables_col_names, tables_rows, tables_row_count = self.run_sql()
+
+        # Return the list of table names.
+        return [row[0] for row in tables_rows]
+
+    def find_views(self) -> (list, list):
+        """ Find the views in this user's schema.
+
+        Parameters:
+        Returns:
+            views_col_names (list): column names: [view_name, view_sql]
+            view_names (list): list of tuples, each tuple being the columns
+                above for the views in this user's schema.
+        """
+
+        # The query for finding the views in this user's schema.
+        sql_x = ''
+        bind_vars_x = dict()
+        if self.db_type == oracle:
+            sql_x = """SELECT view_name, text AS view_sql
+                       FROM user_views
+                       ORDER BY view_name"""
+
+        # Execute the SQL.
+        self.set_sql(sql_x, bind_vars_x)
+        views_col_names, views_rows, views_row_count = self.run_sql()
+
+        # Return the list of view names.
+        return views_col_names, views_rows
+
+    def find_table_columns(self, table_name: str) -> (list, list):
+        """ Find the columns in a table.
+
+        Parameters:
+            table_name (str): the table to find the columns of.
+        Returns:
+            col_names (list): column names:
+                [column_id, column_name, data_type, nullable, data_default,
+                 comments]
+            rows (list): list of tuples, each tuple holds info about one column,
+                with the column names listed in col_names.
+        """
+
+        # The SQL to find the columns, their order, and their data types.
+        sql_x = ''
+        bind_vars_x = dict()
+        if self.db_type == oracle:
+            sql_x = """
+            SELECT column_id, c.column_name,
+              case
+                when (data_type LIKE '%CHAR%' OR data_type IN ('RAW','UROWID'))
+                  then data_type||'('||c.char_length||
+                       decode(char_used,'B',' BYTE','C',' CHAR',null)||')'
+                when data_type = 'NUMBER'
+                  then
+                    case
+                      when c.data_precision is null and c.data_scale is null
+                        then 'NUMBER'
+                      when c.data_precision is null and c.data_scale is not null
+                        then 'NUMBER(38,'||c.data_scale||')'
+                      else data_type||'('||c.data_precision||','||c.data_scale||')'
+                      end
+                when data_type = 'BFILE'
+                  then 'BINARY FILE LOB (BFILE)'
+                when data_type = 'FLOAT'
+                  then data_type||'('||to_char(data_precision)||')'||
+                       decode(data_precision, 126,' (double precision)',
+                       63,' (real)',null)
+                else data_type
+                end data_type,
+                decode(nullable,'Y','Yes','No') nullable,
+                data_default,
+                NVL(comments,'(null)') comments
+            FROM user_tab_cols c, user_col_comments com
+            WHERE c.table_name = :table_name
+            AND c.table_name = com.table_name
+            AND c.column_name = com.column_name
+            ORDER BY column_id"""
+            bind_vars_x = {"table_name": table_name}
+
+        # Execute the SQL.
+        self.set_sql(sql_x, bind_vars_x)
+        columns_col_names, columns_rows, columns_row_count = self.run_sql()
+
+        # Replace None by '(null)' everywhere.
+        columns_rows = [[no_none(x, '(null)') for x in r] for r in columns_rows]
+
+        # Return the column information.
+        return columns_col_names, columns_rows
+
+    def find_view_columns(self, view_name: str) -> (list, list):
+        """ Find the columns in a view.
+
+        Parameters:
+            view_name (str): the table to find the columns of.
+        Returns:
+            col_names (list): column names:
+                [column_id, column_name, data_type, nullable, data_default,
+                 comments]
+            rows (list): list of tuples, each tuple holds info about one column,
+                with the column names listed in col_names.
+        """
+        return self.find_table_columns(view_name)
+
+    def find_indexes(self, table_name: str) -> (list, list):
+        """ Find the indexes in a table.
+
+        Parameters:
+            table_name (str): the table to find the indexes of.
+        Returns:
+            col_names (list): column names:
+                [index_name, index_type, table_type, uniqueness]
+            rows (list): list of tuples, each tuple holds info about one index:
+                tuple = (index_name, index_type, table_type, uniqueness).
+        """
+
+        # The query for finding the index in this table.
+        sql_x = ''
+        bind_vars_x = dict()
+        if self.db_type == oracle:
+            sql_x = """SELECT index_name, index_type, table_type, uniqueness
+                       FROM user_indexes
+                       WHERE table_name = :table_name
+                       ORDER BY index_name"""
+            bind_vars_x = {"table_name": table_name}
+
+        # Execute the SQL.
+        self.set_sql(sql_x, bind_vars_x)
+        indexes_col_names, indexes_rows, indexes_row_count = self.run_sql()
+
+        # Return the index information.
+        return indexes_col_names, indexes_rows
+
+    def find_index_columns(self, index_name: str) -> (list, list):
+        """ Find the columns in an index.
+
+        Parameters:
+            index_name (str): the index to find the columns in.
+        Returns:
+            col_names (list): column names:
+                [column_position, column_name, descend, column_expression]
+            rows (list): list of tuples, a tuple has info about 1 index column:
+              tuple = (column_position, column_expression/column_name, descend).
+        """
+
+        # The query for finding the columns in this index.
+        sql_x = ''
+        bind_vars_x = dict()
+        if self.db_type == oracle:
+            sql_x = """
+            SELECT ic.column_position, column_name, descend, column_expression
+            FROM user_ind_columns ic LEFT OUTER JOIN user_ind_expressions ie
+            ON ic.column_position = ie.column_position
+            AND ic.index_name = ie.index_name
+            WHERE ic.index_name = :index_name
+            ORDER BY ic.column_position"""
+            bind_vars_x = {"index_name": index_name}
+
+        # Execute the SQL.
+        self.set_sql(sql_x, bind_vars_x)
+        ind_col_col_names, ind_col_rows, ind_col_row_count = self.run_sql()
+
+        # Return the information about this index.
+        return ind_col_col_names, ind_col_rows
 
 # -------- CUSTOM STAND-ALONE FUNCTIONS
 
@@ -1080,25 +1106,32 @@ def ask_for_password(username: str) -> str:
     return password
 
 
-def run_sql_cmdline(sql: str) -> list:
-    """ Run SQL against database using sqlplus.
+def run_sql_cmdline(sql: str, db_type: str) -> list:
+    """ Run SQL against database using command line client.
 
     Parameters:
         sql (str): text of the SQL to run.
+        db_type (str): the database type
     Returns:
         sql_output (list): rows of output.
     """
     from subprocess import Popen, PIPE
-    p = Popen(['sqlplus', '/nolog'],  stdin=PIPE, stdout=PIPE, stderr=PIPE)
-    (stdout, stderr) = p.communicate(sql.encode('utf-8'))
-    return stdout.decode('utf-8').split("\n")
+    if db_type == oracle:
+        p = Popen(['sqlplus', '/nolog'],  stdin=PIPE, stdout=PIPE, stderr=PIPE)
+        (stdout, stderr) = p.communicate(sql.encode('utf-8'))
+        return stdout.decode('utf-8').split("\n")
+    elif db_type == sql_server:
+        p = Popen(['sqlcmd', '/nolog'],  stdin=PIPE, stdout=PIPE, stderr=PIPE)
+        (stdout, stderr) = p.communicate(sql.encode('utf-8'))
+        return stdout.decode('utf-8').split("\n")
 
 # -------- IF __NAME__ ....
 
 
 if __name__ == '__main__':
     # GET DATABASE INSTANCE TO USE.
-    db_type1 = 'oracle'
+    db_type1 = oracle
+    db_path1 = ''
     username1 = 'ds2'
     password1 = ask_for_password(username1)
     hostname1 = 'DESKTOP-C54UGSE.attlocal.net'
@@ -1145,7 +1178,7 @@ if __name__ == '__main__':
 
     # RUN ABOVE COMMANDS IN SQLPLUS.
     print('\nRUNNING COMMANDS IN SQLPLUS...')
-    sqlplus_output = run_sql_cmdline(sql_for_sqlplus)
+    sqlplus_output = run_sql_cmdline(sql_for_sqlplus, oracle)
 
     # SHOW THE OUTPUT FROM RUNNING ABOVE COMMANDS IN SQLPLUS.
     # Don't use write_rows, it'll crash because sqlplus output not all columnar.
@@ -1156,8 +1189,8 @@ if __name__ == '__main__':
 
     # CONNECT TO DATABASE INSTANCE SPECIFIED ABOVE.
     print('\nCONNECTING TO DATABASE...')
-    db_instance1 = DBInstance(db_type1, username1, password1, hostname1,
-                              port_num1, instance1)
+    db_instance1 = DBInstance(db_type1, db_path1, username1, password1,
+                              hostname1, port_num1, instance1)
     db_instance1.print_all_connection_parameters()
 
     # CREATE DATABASE CLIENT OBJECT.
