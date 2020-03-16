@@ -1246,4 +1246,4 @@ if __name__ == '__main__':
     rows2 = None
     print()
     database1.close_connection()
-    database1.print_connection_status()
+    print(database1.get_connection_status())
