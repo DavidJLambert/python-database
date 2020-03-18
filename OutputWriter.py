@@ -1,5 +1,4 @@
 """ OutputWriter.py """
-
 from MyFunctions import *
 
 

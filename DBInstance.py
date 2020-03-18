@@ -1,5 +1,4 @@
 """ DBInstance.py """
-
 from MyConstants import *
 from MyFunctions import *
 
@@ -248,7 +247,7 @@ class DBInstance(object):
             z = ''
         elif self.db_lib_name == cx_Oracle:
             z = '{}/{}@{}:{}/{}'
-        elif self.db_lib_name == postgresql:
+        elif self.db_lib_name == psycopg2:
             z = "user='{}' password='{}' host='{}' port='{}' dbname='{}'"
         elif self.db_lib_name == pyodbc:
             if self.db_type == access:

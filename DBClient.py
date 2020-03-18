@@ -1,5 +1,4 @@
 """ DBClient.py """
-
 from DBInstance import *
 from OutputWriter import *
 
@@ -210,7 +209,7 @@ class DBClient(object):
                     print('\nCursor is None.')
                     self.clean_up()
                     exit(1)
-                elif sql_type in ('INSERT', 'UPDATE', 'DELETE'):
+                elif sql_type in {'INSERT', 'UPDATE', 'DELETE'}:
                     self.cursor.commit()
                 elif not sql_type == 'SELECT':
                     # Not a CRUD statement.

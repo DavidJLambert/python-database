@@ -1,5 +1,4 @@
 """ MyConstants.py """
-
 # Supported database types.
 oracle = 'oracle'
 mysql = 'mysql'
@@ -21,6 +20,10 @@ psycopg2 = 'psycopg2'
 sqlite3 = 'sqlite3'
 lib_name_for_db = {oracle: cx_Oracle, mysql: pymysql, sql_server: pyodbc,
                    postgresql: psycopg2, access: pyodbc, sqlite: sqlite3}
+
+# Database client executables.  Their directories must be in PATH.
+db_client_exes = {oracle: 'sqlplus', mysql: 'mysqlsh', sql_server: 'sqlcmd',
+                  postgresql: 'psql', access: 'None', sqlite: 'sqlite3'}
 
 # Parameterization/bind variable format used here.
 paramstyle_named = {cx_Oracle, sqlite3}

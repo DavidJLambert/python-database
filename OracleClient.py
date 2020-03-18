@@ -7,9 +7,9 @@ REPOSITORY: https://github.com/DavidJLambert/Python-Universal-DB-Client
 
 AUTHOR: David J. Lambert
 
-VERSION: 0.5.0
+VERSION: 0.5.1
 
-DATE: Mar 16, 2020
+DATE: Mar 17, 2020
 
 PURPOSE:
   A sample of my Python coding, to demonstrate that I can write decent Python,
@@ -200,13 +200,13 @@ from DBClient import *
 if __name__ == '__main__':
 
     # OS AND PYTHON VERSION STUFF
-    os_python_version_info()
+    os, py_version_major, py_version_minor = os_python_version_info()
 
     # COLUMN SEPARATOR FOR OUTPUT.
     my_colsep = '|'
 
     # GET DATABASE INSTANCE TO USE.
-    db_type1 = mysql
+    db_type1 = postgresql
     db_path1 = ''
     username1 = ''
     password1 = ''
@@ -241,98 +241,112 @@ if __name__ == '__main__':
     elif db_type1 == access:
         db_path1 = r'.\databases\ds2.accdb'
     elif db_type1 == sqlite:
-        db_path1 = './databases/ds2.sqlite3'
+        db_path1 = ("C:/Coding/PyCharm/projects/Python-Universal-DB-Client/"
+                    "databases/ds2.sqlite3")
     else:
         print('Unknown database type.')
         exit(1)
 
+    query = ('SELECT actor, title, price, categoryname\n'
+             'FROM PRODUCTS p INNER JOIN CATEGORIES c\n'
+             'ON p.category = c.category\n'
+             'WHERE actor = {}\n')
     if db_type1 == oracle:
-        # TEXT OF COMMANDS TO RUN IN SQLPLUS FOR ORACLE.
+        # TEXT OF COMMANDS TO RUN IN SQLPLUS.
         # Explanation of commands:
-        # SET SQLPROMPT ""      turn off prompt
-        # SET SQLNUMBER OFF     turn off numbers printed for multi-line input
-        # SET TRIMOUT ON        trim trailing spaces
-        # SET TAB OFF           no tabs in the output
-        # SET NEWPAGE 0         no lines between page top and top title
-        # SET LINESIZE 256      characters/line
-        # SET WRAP OFF          lines don't wrap, truncated to match LINESIZE
-        # SET COLSEP "|"        set column separator to pipe character
-        # SPOOL <filename>      writes output to <filename> instead of standard out
-        # SET TRIMSPOOL ON      trim trailing spaces in output file
-        sql_for_client = """
-        SET SQLPROMPT ""
-        CONNECT {}/{}@{}:{}/{}
-        SET SQLNUMBER OFF
-        SET TRIMOUT ON
-        SET TAB OFF
-        SET NEWPAGE 0
-        SET LINESIZE 256
-        SET WRAP OFF
-        SET COLSEP "{}"
-        VARIABLE actor VARCHAR2(50)
-        VARIABLE whatever NUMBER
-        BEGIN
-            :actor := 'CHEVY FOSTER';
-        END;
-        /
-        SELECT actor, title, price, categoryname
-        FROM PRODUCTS p INNER JOIN CATEGORIES c
-        ON p.category = c.category
-        WHERE actor = :actor;
-        exit
-        """.format(username1, password1, hostname1, port_num1, instance1,
-                   my_colsep)
+        # SET SQLPROMPT ""        turn off prompt
+        # SET SQLNUMBER OFF       turn off numbers printed for multi-line input
+        # SET TRIMOUT ON          trim trailing spaces
+        # SET TAB OFF             no tabs in the output
+        # SET NEWPAGE 0           no lines between page top and top title
+        # SET LINESIZE 256        characters/line
+        # SET WRAP OFF            lines don't wrap, truncated to match LINESIZE
+        # SET COLSEP "|"          set column separator to pipe character
+        # SPOOL <filename>        writes output to <filename>, not standard out
+        # SET TRIMSPOOL ON        trim trailing spaces in output file (NOT USED)
+        z = ('SET SQLPROMPT ""\n'
+             'SET SQLNUMBER OFF\n'
+             'SET TRIMOUT ON\n'
+             'SET TAB OFF\n'
+             'SET NEWPAGE 0\n'
+             'SET LINESIZE 256\n'
+             'SET WRAP OFF\n'
+             'SET COLSEP "{}"\n'
+             'VARIABLE actor VARCHAR2(50)\n'
+             'BEGIN\n'
+             "    :actor := 'CHEVY FOSTER';\n"
+             'END;\n'
+             '/\n'
+             '{}'
+             'exit\n')
+        query1 = query.format(':actor;')
+        sql_for_client = z.format(my_colsep, query1)
     elif db_type1 == sqlite:
-        # UNFINISHED
         # TEXT OF COMMANDS TO RUN IN SQLITE.
         # Explanation of commands:
-        # .open {}      turn off prompt
-        sql_for_client = """
-        .open "{}"
-        .separator "{}"
-        .headers on
-        .nullvalue "(null)"
-        VARIABLE actor VARCHAR2(50)
-        VARIABLE whatever NUMBER
-        BEGIN
-            :actor := 'CHEVY FOSTER';
-        END;
-        /
-        SELECT actor, title, price, categoryname
-        FROM PRODUCTS p INNER JOIN CATEGORIES c
-        ON p.category = c.category
-        WHERE actor = :actor;
-        exit
-        """.format(db_path1, my_colsep)
+        # .separator "|"                 set column separator to pipe character
+        # .headers on                    put in column headings (column names)
+        # .nullvalue "(null)"            print "(null)" for NULL, not ""
+        z = ('.separator "{}"\n'
+             '.headers on\n'
+             '.nullvalue "(null)"\n'
+             'CREATE TEMP TABLE x9q7z (Name TEXT PRIMARY KEY, Value TEXT);\n'
+             "INSERT INTO x9q7z VALUES ('actor', 'CHEVY FOSTER');\n"
+             '{}'
+             '.exit\n')
+        query1 = query.format("(SELECT Value FROM x9q7z WHERE Name = 'actor');")
+        sql_for_client = z.format(my_colsep, query1)
     elif db_type1 == sql_server:
         # TEXT OF COMMANDS TO RUN IN SQLCMD FOR SQL SERVER.
         # Explanation of commands:
-        sql_for_client = """
-        DECLARE @actor AS VARCHAR(50);
-        SET @actor = 'CHEVY FOSTER';
-        DECLARE @whatever AS INT;
-        SELECT actor, title, price, categoryname
-        FROM PRODUCTS p INNER JOIN CATEGORIES c
-        ON p.category = c.category
-        WHERE actor = @actor
-        exit
-        """.format(db_path1, my_colsep)
+        # :Setvar SQLCMDCOLSEP |         set column separator to pipe character
+        # SET NOCOUNT ON                 turn off "rows affected"
+        z = (':Setvar SQLCMDCOLSEP |\n'
+             'SET NOCOUNT ON\n'
+             'DECLARE @actor AS VARCHAR(50);\n'
+             "SET @actor = 'CHEVY FOSTER';\n"
+             '{}'
+             'go\n'
+             'exit\n')
+        query1 = query.format('@actor')
+        sql_for_client = z.format(query1)
+    elif db_type1 == mysql:
+        # TEXT OF COMMANDS TO RUN IN MYSQLSH FOR MYSQL.
+        # Explanation of commands:
+        z = ("SET @actor := 'CHEVY FOSTER';\n"
+             '{}')
+        query1 = query.format('@actor;')
+        sql_for_client = z.format(query1)
+    elif db_type1 == postgresql:
+        # TEXT OF COMMANDS TO RUN IN MYSQLSH FOR MYSQL.
+        # Explanation of commands:
+        # \pset null '(null)'          Print nulls as '(null)', not ''.
+        # \pset footer off             Turn off query output footer (# rows).
+        z = ("\\pset null '(null)'\n"
+             '\\pset footer off\n'
+             'CREATE TABLE x9q7z (Name TEXT PRIMARY KEY, Value TEXT);\n'
+             "INSERT INTO x9q7z VALUES ('actor', 'CHEVY FOSTER');\n"
+             '{}'
+             'DROP TABLE x9q7z;\n'
+             '\\quit\n')
+        query1 = query.format("(SELECT Value FROM x9q7z WHERE Name = 'actor');")
+        sql_for_client = z.format(query1)
     elif db_type1 == access:
         print("MS Access does not have a command line interface.")
 
-    # TODO disable cmdline client for now.
-    '''
     # RUN ABOVE COMMANDS IN DATABASE CLIENT.
     print('\nRUNNING COMMANDS IN DATABASE CLIENT...')
-    # client_output = run_sql_cmdline(sql_for_client, db_type1)
+    client_output = run_sql_cmdline(os, sql_for_client, db_type1, db_path1,
+                                    username1, password1, hostname1, port_num1,
+                                    instance1)
 
-    # SHOW THE OUTPUT FROM RUNNING ABOVE COMMANDS IN SQLPLUS.
-    # Don't use write_rows, it'll crash because sqlplus output not all columnar.
-    print('\nTHE OUTPUT FROM RUNNING THOSE COMMANDS IN SQLPLUS:')
+    # SHOW THE OUTPUT FROM RUNNING ABOVE COMMANDS IN DATABASE CLIENT.
+    # Don't use write_rows, probably the db client output not all columnar,
+    # it'll crash the database client.
+    print('\nTHE OUTPUT FROM RUNNING THOSE COMMANDS IN THE DATABASE CLIENT:')
     if client_output != '':
         for line in client_output:
             print(line)
-    '''
     print('ALL DONE WITH THAT OUTPUT.')
 
     # CONNECT TO DATABASE INSTANCE SPECIFIED ABOVE.
@@ -360,23 +374,15 @@ if __name__ == '__main__':
     bind_vars1 = dict()
     if db_type1 == access:
         # MS Access does not support bind variables/parameterization.
-        sql1 = ("SELECT actor, title, price, categoryname "
-                "FROM PRODUCTS p INNER JOIN CATEGORIES c "
-                "ON p.category = c.category WHERE actor = 'CHEVY FOSTER'")
+        sql1 = query.format("'CHEVY FOSTER'")
     elif lib_name_for_db[db_type1] in paramstyle_named:
-        sql1 = ("SELECT actor, title, price, categoryname "
-                "FROM PRODUCTS p INNER JOIN CATEGORIES c "
-                "ON p.category = c.category WHERE actor = :actor")
+        sql1 = query.format(':actor')
         bind_vars1 = {'actor': 'CHEVY FOSTER'}
     elif lib_name_for_db[db_type1] in paramstyle_qmark:
-        sql1 = ("SELECT actor, title, price, categoryname "
-                "FROM PRODUCTS p INNER JOIN CATEGORIES c "
-                "ON p.category = c.category WHERE actor = ?")
+        sql1 = query.format('?')
         bind_vars1 = ('CHEVY FOSTER',)
     elif lib_name_for_db[db_type1] in paramstyle_pyformat:
-        sql1 = ("SELECT actor, title, price, categoryname "
-                "FROM PRODUCTS p INNER JOIN CATEGORIES c "
-                "ON p.category = c.category WHERE actor = %(actor)s")
+        sql1 = query.format('%(actor)s')
         bind_vars1 = {'actor': 'CHEVY FOSTER'}
     else:
         z = 'DB type {}, with library {}, has an unknown parameter style.'
