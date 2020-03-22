@@ -6,9 +6,9 @@ REPOSITORY: https://github.com/DavidJLambert/Python-Universal-DB-Client
 
 AUTHOR: David J. Lambert
 
-VERSION: 0.6.0
+VERSION: 0.6.1
 
-DATE: Mar 21, 2020
+DATE: Mar 22, 2020
 
 For more information, see README.rst.
 """
@@ -41,7 +41,10 @@ if __name__ == '__main__':
     my_colsep = '|'
 
     # GET DATABASE INSTANCE TO USE.
-    db_type1 = postgresql
+    db_type1 = sqlserver
+    if db_type1 not in db_types:
+        print("UNKNOWN DATABASE TYPE")
+        exit(1)
     db_path1 = ''
     username1 = ''
     password1 = 'password'
@@ -170,7 +173,8 @@ if __name__ == '__main__':
         sql_for_client = z1.format(my_colsep) + query + param + z2
 
     # RUN ABOVE COMMANDS IN DATABASE CLIENT.
-    print('\nRUNNING COMMANDS IN DATABASE CLIENT...')
+    db_client_exe = db_client_exes[db_type1].upper()
+    print('\nRUNNING COMMANDS IN {}...'.format(db_client_exe))
     sql_out = sql_cmdline(os, sql_for_client, db_type1, db_path1, username1,
                           password1, hostname1, port_num1, instance1)
 
@@ -178,10 +182,11 @@ if __name__ == '__main__':
     # Don't use write_rows, probably the db client output not all columnar,
     # it'll crash the database client.
     if len(sql_out) > 0:
-        print('\nTHE OUTPUT FROM RUNNING COMMANDS IN THE DATABASE CLIENT:')
+        z = '\nTHE OUTPUT FROM RUNNING COMMANDS IN {}:'
+        print(z.format(db_client_exe))
         for line in sql_out:
             print(line)
-        print('ALL DONE WITH THAT OUTPUT.')
+        print('ALL DONE WITH {}.'.format(db_client_exe))
 
     # CONNECT TO DATABASE INSTANCE SPECIFIED ABOVE.
     print('\nCONNECTING TO DATABASE...')

@@ -157,6 +157,7 @@ def sql_cmdline(os: str, sql: str, db_type: str, db_path: str, username: str,
 
     if not file_in_path(os, db_client_exe):
         print('Did not find {} in PATH.'.format(db_client_exe))
+        return
 
     cmd = ''
     if db_type == access:

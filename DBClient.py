@@ -199,6 +199,7 @@ class DBClient(object):
                     break
                 else:
                     print('Invalid choice, please try again.')
+            print('\nYou chose table "{}".'.format(my_table))
 
         # Set up to write output.
         writer1 = OutputWriter(out_file_name='', align_col=True, col_sep=colsep)
@@ -252,7 +253,7 @@ class DBClient(object):
             for column_pos, column_name, descend, column_expr in ind_col_rows:
                 if index_columns != '':
                     index_columns += ', '
-                if column_expr is None:
+                if column_expr is None or column_expr == '':
                     index_columns += column_name + ' ' + descend
                 else:
                     index_columns += column_expr + ' ' + descend
@@ -275,6 +276,7 @@ class DBClient(object):
         Returns:
         """
         # The query for finding the views in this user's schema.
+        # find_views_sql has no parameters.
         sql_x = mq.find_views_sql[self.db_type]
         if skip_operation(sql_x):
             if sql_x == mq.not_implemented:
@@ -285,9 +287,11 @@ class DBClient(object):
                 print(z.format(self.db_type.upper(), self.db_lib_name.upper()))
             return
 
-        # Execute the SQL.
-        # find_views_sql has no parameters.
+        # Find views
         self.set_sql(sql_x)
+        # TODO need to use all fields and make return values consistent.
+        # views_col_names: view_name, view_sql, check_option, is_updatable,
+        #                  is_insertable, is_deletable
         views_col_names, views, views_row_count = self.run_sql()
 
         # Create mapping from column name to index, so I can access items by
@@ -360,7 +364,7 @@ class DBClient(object):
             table_name (str): the table to find the columns of.
         Returns:
             col_names (list): column names:
-                [column_id, column_name, data_type, nullable, data_default,
+                [column_id, column_name, data_type, nullable, default_value,
                  comments]
             rows (list): list of tuples, each tuple holds info about one column,
                 with the column names listed in col_names.
@@ -388,7 +392,7 @@ class DBClient(object):
             view_name (str): the table to find the columns of.
         Returns:
             col_names (list): column names:
-                [column_id, column_name, data_type, nullable, data_default,
+                [column_id, column_name, data_type, nullable, default_value,
                  comments]
             rows (list): list of tuples, each tuple holds info about one column,
                 with the column names listed in col_names.
