@@ -36,6 +36,21 @@ def no_none(might_be_none: str, if_its_none: str) -> str:
 # End of function no_none.
 
 
+def skip_operation(sql: str) -> (bool, str):
+    """ Detect whether to skip this operation and operations dependent on it
+        Only used in DBClient.
+
+    Parameters:
+        sql (str): SQL from MyQueries.py.
+    Returns:
+        skip (bool): skip this operation and operations dependent on it.
+    """
+    from MyQueries import not_implemented, not_possible_sql
+    skip = (sql in {not_implemented, not_possible_sql})
+    return skip
+# End of function print_stacktrace.
+
+
 def os_python_version_info() -> (str, int, int):
     """ Method to print OS and Python version info.
         Only used in __main__.
@@ -88,7 +103,7 @@ def ask_for_password(username: str) -> str:
 
 def file_in_path(os: str, filename: str) -> bool:
     """ Method to find if file in PATH.
-        Only used in run_sql_cmdline.
+        Only used in sql_cmdline.
 
     Parameters:
         os (str): 'Windows', 'Linux', or 'Darwin'
@@ -114,9 +129,8 @@ def file_in_path(os: str, filename: str) -> bool:
 # End of function file_in_path.
 
 
-def run_sql_cmdline(os: str, sql: str, db_type: str, db_path: str,
-                    username: str, password: str, hostname: str, port_num: int,
-                    instance: str) -> list:
+def sql_cmdline(os: str, sql: str, db_type: str, db_path: str, username: str,
+                password: str, hostname: str, port_num: int, instance: str) -> list:
     """ Run SQL against database using command line client.
         Only used in __main__.
 
@@ -136,31 +150,36 @@ def run_sql_cmdline(os: str, sql: str, db_type: str, db_path: str,
     from subprocess import Popen, PIPE
 
     db_client_exe = db_client_exes[db_type]
+    if db_client_exe is None:
+        z = '{} DOES NOT HAVE A COMMAND LINE INTERFACE.'
+        print(z.format(db_type).upper())
+        return list()
+
     if not file_in_path(os, db_client_exe):
         print('Did not find {} in PATH.'.format(db_client_exe))
 
     cmd = ''
-    if db_type == oracle:
-        conn_str = '{}/{}@{}:{}/{}'.format(username, password, hostname,
-                                           port_num, instance)
-        cmd = [db_client_exe, conn_str]
-    elif db_type == sql_server:
-        host_port = '{},{}'.format(hostname, port_num)
-        cmd = [db_client_exe, '-U', username, '-P', password, '-S', host_port,
-               '-d', instance, '-s', "|"]
-    elif db_type == sqlite:
-        cmd = [db_client_exe, db_path]
-    elif db_type == access:
+    if db_type == access:
         print('No command line available for MS Access.')
         return list()
     elif db_type == mysql:
         conn_str = '--uri={}:{}@{}:{}/{}'.format(username, password, hostname,
-                                           port_num, instance)
+                                                 port_num, instance)
         cmd = [db_client_exe, conn_str, '--table', '--sql', '--quiet-start']
+    elif db_type == oracle:
+        conn_str = '{}/{}@{}:{}/{}'.format(username, password, hostname,
+                                           port_num, instance)
+        cmd = [db_client_exe, conn_str]
     elif db_type == postgresql:
         z = 'postgresql://{}:{}@{}:{}/{}'
         conn_str = z.format(username, password, hostname, port_num, instance)
         cmd = [db_client_exe, '-d', conn_str]
+    elif db_type == sqlite:
+        cmd = [db_client_exe, db_path]
+    elif db_type == sqlserver:
+        host_port = '{},{}'.format(hostname, port_num)
+        cmd = [db_client_exe, '-U', username, '-P', password, '-S', host_port,
+               '-d', instance, '-s', "|"]
     else:
         print('Not yet implemented for {}.'.format(db_type))
         return list()
@@ -171,9 +190,9 @@ def run_sql_cmdline(os: str, sql: str, db_type: str, db_path: str,
     z = [('WARNING: Using a password on the command line interface can be '
           'insecure.'), '']
     if len(stderr) > 0 and stderr != [''] and stderr != z:
-        print("PROBLEM IN run_sql_cmdline:")
+        print("PROBLEM IN sql_cmdline:")
         print('cmd: ', cmd)
         print('sql: ', sql)
         print('stderr: ', stderr)
     return stdout.decode('utf-8').split("\n")
-# End of function run_sql_cmdline.
+# End of function sql_cmdline.

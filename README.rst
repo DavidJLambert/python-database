@@ -1,33 +1,30 @@
 Universal Database Client
 -------------------------
 
-SUMMARY:
-  Command-line universal database client.
+SUMMARY: Command-line universal database client.
 
 REPOSITORY: https://github.com/DavidJLambert/Python-Universal-DB-Client
 
 AUTHOR: David J. Lambert
 
-VERSION: 0.2.8
+VERSION: 0.6.0
 
-DATE: Mar 2, 2020
+DATE: Mar 21, 2020
 
 PURPOSE:
   A sample of my Python coding, to demonstrate that I can write decent Python,
-  test it, and document it.  I also demonstrate that I know relational
-  databases and Linux.
+  test it, and document it.  I also demonstrate I know relational databases.
 
 DESCRIPTION:
-  This is a command-line program that asks an end-user for SQL to execute on 1
-  of 6 different relational databases, ordered by popularity as ranked in
-  https://pypl.github.io/DB.html in Feb 2020:
+  This is a command-line program that asks an end-user for SQL to execute on
+  1 of 6 types of relational databases:
 
-  - Oracle
+  - Access
   - MySQL
-  - Microsoft SQL Server
-  - Microsoft Access
+  - Oracle
   - PostgreSQL
   - SQLite
+  - SQL Server
 
   I also provide sample databases to run this program against (see below).
 
@@ -36,10 +33,43 @@ DESCRIPTION:
   from entering other SQL, such as ALTER DATABASE, CREATE VIEW, and BEGIN
   TRANSACTION, but none have been tested.
 
-  A future version might include the ability to list databases, tables, views,
-  indexes, and their fields without having to know the structure of any data
-  dictionaries.  This is the easiest addition to make, so it is the most
-  probable addition to this package.
+  Class DBInstance encapsulates all the info needed to log into a database
+  instance, plus it encapsulates the connection handle to that database.
+  Its externally useful methods are:
+  1)  print_all_connection_parameters: prints all the connection parameters.
+  2)  close_connection: closes the connect to the database.
+  3)  get_connection_status: whether or not DBInstance is connected to the db.
+
+  Class DBClient executes SQL with bind variables, and then prints the results.
+  Its externally useful methods are:
+  1)  set_sql: gets the text of SQL to run.
+  2)  set_bind_vars: gets the bind variables for sql.
+  3)  run_sql: executes SQL, which was read with set_sql and set_bind_vars.
+  4)  database_table_schema: lists all the tables owned by the current login,
+      all the columns in those tables, and all indexes on those tables.
+  5)  database_view_schema: lists all the views owned by the current login,
+      all the columns in those views, and the SQL for the view.
+
+  Class OutputWriter handles all query output to file or to standard output.
+  Its externally useful methods are:
+  1)  get_align_col: whether or not to align columns in output.
+  2)  get_col_sep: get the character(s) to separate columns with.
+  3)  get_out_file_name: get location to write output to (file or standard out).
+  4)  write_rows: write output to location chosen in get_out_file_name.
+  5)  close_output_file: if writing to output file, close it.
+
+  Stand-alone function sql_cmdline runs the database command line client
+  (sqlplus, sqlcmd, etc.) as a subprocess.
+
+  Stand-alone function ask_for_password(username) prompts for the password for
+  the username provided as an argument.
+
+  The code has been tested with CRUD statements (Create, Read, Update, Delete).
+  There is nothing to prevent the end-user from entering other SQL, such as
+  ALTER DATABASE, CREATE VIEW, and BEGIN TRANSACTION, but none have been tested.
+
+  This program loads the entire result set into memory.  Thus, it is unsuitable
+  for large results sets, which may not fit in the host's available RAM.
 
 PROGRAM REQUIREMENTS:
 

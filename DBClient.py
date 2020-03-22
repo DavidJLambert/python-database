@@ -1,6 +1,7 @@
 """ DBClient.py """
 from DBInstance import *
 from OutputWriter import *
+import MyQueries as mq
 
 
 class DBClient(object):
@@ -8,7 +9,7 @@ class DBClient(object):
 
     Attributes:
         sql (str): the text of a SQL program with bind variables.
-        bind_vars (dict): the bind variables' names and values.
+        bind_vars: dict or tuple containing bind variables.
         cursor: the cursor to execute this SQL on.
             I set cursor = None when cursor closed.
     """
@@ -26,17 +27,17 @@ class DBClient(object):
         self.db_type = self.db_instance.get_db_type()
 
         # Get database library.
-        self.db_library_name = self.db_instance.get_db_lib_name()
-        db_library = __import__(self.db_library_name)
+        self.db_lib_name = self.db_instance.get_db_lib_name()
+        db_library = __import__(self.db_lib_name)
         self.db_library = db_library
 
         # Get database cursor.
         self.cursor = self.db_instance.create_cursor(self)
 
-        # Placeholders for SQL text and bind variables.
-        # To avoid PyCharm warnings about variables defined outside of __init__.
+        # Initialize SQL text and bind variables.
         self.sql: str = ''
-        self.bind_vars = dict()
+        self.bind_vars = self.db_instance.init_bind_vars()
+        self.paramstyle = self.db_instance.get_paramstyle()
         return
     # End of method __init__.
 
@@ -54,122 +55,28 @@ class DBClient(object):
             self.cursor = None
     # End of method clean_up.
 
-    def set_sql(self, sql: str, bind_vars: dict) -> None:
-        """ Set text of SQL to execute + values of any bind variables in it.
+    def set_sql(self, sql: str) -> None:
+        """ Set text of SQL to execute.
 
         Parameters:
             sql (str): text of the SQL to execute.
-            bind_vars (dict): the bind variables' names and values.
         Returns:
         """
         self.sql: str = sql
-        self.bind_vars: dict = bind_vars
         return
     # End of method set_sql.
 
-    def set_sql_at_prompt(self) -> None:
-        """ Set text of SQL at a prompt.
+    def set_bind_vars(self, bind_vars) -> None:
+        """ Set bind variables.
 
         Parameters:
+            bind_vars: the bind variables' values and maybe names too (tuple or
+                       dict(), depending on database type and db library.
         Returns:
         """
-        # Get text of SQL program.
-        prompt = ('\nEnter the lines of a SQL program.'
-                  '\nHit Return to stop entering the SQL.'
-                  '\nAt any point, enter "Q" to Quit this program:\n')
-        sql = ''
-        while True:
-            # Get the next line of SQL.
-            response = input(prompt).strip()
-            # Use a prompt only for the first line of SQL.
-            prompt = ''
-
-            if response == '':
-                # Done entering SQL.
-                break
-            elif response.upper() == 'Q':
-                print('\nQuitting at your request.')
-                self.clean_up()
-                exit(0)
-            else:
-                # Add more text to the current SQL.
-                sql += '\n' + response
-        self.sql = sql.strip()
-        return
-    # End of method set_sql_at_prompt.
-
-    def set_bind_vars_at_prompt(self) -> None:
-        """ Set bind variables at a prompt.
-
-        Parameters:
-        Returns:
-        """
-        from datetime import datetime
-        # Prompts for calling input().
-        prompt_name = ("\nEnter a bind variable name (omit the colon)."
-                       "\nOr hit Return when done entering bind variables:\n")
-        prompt_type = ("\nEnter the letter of the bind variable's data type:"
-                       "\n(T)ext."
-                       "\n(I)nteger."
-                       "\n(R)eal (aka decimal)."
-                       "\n(D)ate.\n")
-        prompt_value = "\nEnter the bind variable value.\n"
-        prompt_text = "Do not put quotes around text, that's done for you.\n"
-        prompt_date = "Use the date format 'm/d/yyyy'.\n"
-
-        # Dict with keys = bind variable names, values = bind variable values.
-        bind_vars = dict()
-        # One loop per bind variable name/value pair.
-        while True:
-            # Get bind variable name.
-            bindvar_name = input(prompt_name).strip()
-            if bindvar_name == '':
-                # Done entering SQL.
-                break
-            elif bindvar_name.upper() == 'Q':
-                print('\nQuitting at your request.')
-                self.clean_up()
-                exit(0)
-
-            # Get bind variable data type.
-            while True:
-                bindvar_type = input(prompt_type).strip().upper()
-                if len(bindvar_type) != 1:
-                    print('Enter one character only, please try again.')
-                elif bindvar_type not in 'TIRD':
-                    print('Invalid entry, please try again.')
-                else:
-                    # Valid input.
-                    break
-
-            # Get bind variable value.
-            bindvar_val = None
-            if bindvar_type == 'T':
-                bindvar_val = input(prompt_value + prompt_text).strip()
-            elif bindvar_type == 'I':
-                bindvar_val = int(input(prompt_value).strip())
-            elif bindvar_type == 'R':
-                bindvar_val = float(input(prompt_value).strip())
-            elif bindvar_type == 'D':
-                while True:
-                    bindvar_val = input(prompt_value + prompt_date).strip()
-                    try:
-                        bindvar_val = datetime.strptime(bindvar_val, '%m/%d/%Y')
-                        break
-                    except ValueError:
-                        print('Invalid date, please try again.')
-            else:
-                print('\nProgram bug.')
-                self.clean_up()
-                exit(0)
-
-            # Add bind variable name/value pair to dictionary of bind variables.
-            bind_vars[bindvar_name] = bindvar_val
-
-        # All done!
         self.bind_vars = bind_vars
         return
-    # End of method set_bind_vars_at_prompt.
+    # End of method set_bind_vars.
 
     def run_sql(self) -> (list, list, int):
         """ Run the SQL, perhaps return rows and column names.
@@ -211,10 +118,10 @@ class DBClient(object):
                     exit(1)
                 elif sql_type in {'INSERT', 'UPDATE', 'DELETE'}:
                     self.cursor.commit()
-                elif not sql_type == 'SELECT':
+                elif sql_type not in {'SELECT', 'PRAGMA'}:
                     # Not a CRUD statement.
                     pass
-                elif sql_type == 'SELECT':
+                elif sql_type in {'SELECT', 'PRAGMA'}:
                     # Fetch rows.  Fetchall for large number of rows a problem.
                     all_rows = self.cursor.fetchall()
 
@@ -236,6 +143,8 @@ class DBClient(object):
 
     # THE REST OF THE METHODS ALL HAVE TO DO WITH SEEING THE DATABASE SCHEMA.
 
+    # EVERYTHING ABOVE IS DB_TYPE INDEPENDENT.  BELOW, NOT INDEPENDENT.
+
     def database_table_schema(self, colsep='|') -> None:
         """ Print the schema for a table.
 
@@ -243,12 +152,24 @@ class DBClient(object):
             colsep (str): column separator to use.
         Returns:
         """
-        # Find tables
-        if self.db_type == access:
-            z = 'SQL CANNOT READ THE SCHEMA IN MS ACCESS THROUGH {}.'
-            print(z.format(lib_name_for_db[access].upper()))
+        # The query to find the tables in this user's data dictionary views.
+        sql_x = mq.find_tables_sql[self.db_type]
+        if skip_operation(sql_x):
+            if sql_x == mq.not_implemented:
+                z = mq.not_implemented
+                print(z.format("TABLES", self.db_type.upper()))
+            elif sql_x == mq.not_possible_sql:
+                z = mq.not_possible_sql
+                print(z.format(self.db_type.upper(), self.db_lib_name.upper()))
             return
-        tables = self._find_tables()
+
+        # Execute the SQL.
+        # find_tables_sql has no parameters.
+        self.set_sql(sql_x)
+        tables_col_names, tables_rows, tables_row_count = self.run_sql()
+
+        # Extract the list of table names.
+        tables = [row[0] for row in tables_rows]
 
         if len(tables) == 0:
             print('You own no tables!  Nothing to see!')
@@ -256,6 +177,7 @@ class DBClient(object):
         elif len(tables) == 1:
             # Only one table.  Choose that table to show.
             my_table = tables[0]
+            print('\nYou have only one table: {}.'.format(my_table))
         else:
             # Ask end-user to choose a table.
             prompt = '\nHere are the tables available to you:\n'
@@ -282,16 +204,44 @@ class DBClient(object):
         writer1 = OutputWriter(out_file_name='', align_col=True, col_sep=colsep)
 
         # Find and print columns in this table.
-        columns_col_names, columns_rows = self._find_table_columns(my_table)
-        writer1.write_rows(columns_rows, columns_col_names)
+        sql_x = mq.find_tab_col_sql[self.db_type]
+        if skip_operation(sql_x):
+            if sql_x == mq.not_implemented:
+                z = mq.not_implemented
+                print(z.format("TABLE'S COLUMNS", self.db_type.upper()))
+            elif sql_x == mq.not_possible_sql:
+                z = mq.not_possible_sql
+                print(z.format(self.db_type.upper(), self.db_lib_name.upper()))
+        else:
+            columns_col_names, columns_rows = self._find_table_columns(my_table)
+            writer1.write_rows(columns_rows, columns_col_names)
+            print()
 
         # Find all indexes in this table.
+        sql_x = mq.find_indexes_sql[self.db_type]
+        if skip_operation(sql_x):
+            if sql_x == mq.not_implemented:
+                z = mq.not_implemented
+                print(z.format("INDEXES", self.db_type.upper()))
+            elif sql_x == mq.not_possible_sql:
+                z = mq.not_possible_sql
+                print(z.format(self.db_type.upper(), self.db_lib_name.upper()))
+            return
         indexes_col_names, indexes_rows = self._find_indexes(my_table)
 
         # Add 'INDEX_COLUMNS' to end of col_names.
         indexes_col_names.append('INDEX_COLUMNS')
 
         # Go through indexes, add index_columns to end of each index/row.
+        sql_x = mq.find_ind_col_sql[self.db_type]
+        if skip_operation(sql_x):
+            if sql_x == mq.not_implemented:
+                z = mq.not_implemented
+                print(z.format("INDEX'S COLUMNS", self.db_type.upper()))
+            elif sql_x == mq.not_possible_sql:
+                z = mq.not_possible_sql
+                print(z.format(self.db_type.upper(), self.db_lib_name.upper()))
+            return
         for count, index_row in enumerate(indexes_rows):
             index_name = index_row[0]
             _, ind_col_rows = self._find_index_columns(index_name)
@@ -324,23 +274,35 @@ class DBClient(object):
             colsep (str): column separator to use.
         Returns:
         """
-        # Find views
-        if self.db_type == access:
-            z = 'SQL CANNOT READ THE SCHEMA IN MS ACCESS THROUGH {}.'
-            print(z.format(lib_name_for_db[access].upper()))
+        # The query for finding the views in this user's schema.
+        sql_x = mq.find_views_sql[self.db_type]
+        if skip_operation(sql_x):
+            if sql_x == mq.not_implemented:
+                z = mq.not_implemented
+                print(z.format("VIEWS", self.db_type.upper()))
+            elif sql_x == mq.not_possible_sql:
+                z = mq.not_possible_sql
+                print(z.format(self.db_type.upper(), self.db_lib_name.upper()))
             return
-        views_col_names, views = self._find_views()
+
+        # Execute the SQL.
+        # find_views_sql has no parameters.
+        self.set_sql(sql_x)
+        views_col_names, views, views_row_count = self.run_sql()
 
         # Create mapping from column name to index, so I can access items by
         # column name instead of by index.
-        columns = {name: index for index, name in enumerate(views_col_names)}
+        columns = {name.lower(): index for
+                   index, name in enumerate(views_col_names)}
 
         if len(views) == 0:
             print('You own no views!  Nothing to see!')
             return
         elif len(views) == 1:
             # Only one view.  Choose it.
-            choice = 0
+            my_view = views[0]
+            z = '\nYou have only one view: {}.'
+            print(z.format(my_view[columns['view_name']]))
         else:
             # Ask end-user to choose a view.
             prompt = '\nHere are the views available to you:\n'
@@ -358,14 +320,14 @@ class DBClient(object):
                     exit(0)
                 choice = int(choice)
                 if choice in range(len(views)):
-                    choice -= 1
+                    my_view = views[choice - 1]
                     break
                 else:
                     print('Invalid choice, please try again.')
 
         # Unpack information.
-        my_view_name = views[choice][columns['VIEW_NAME']]
-        my_view_sql = views[choice][columns['VIEW_SQL']]
+        my_view_name = my_view[columns['view_name']]
+        my_view_sql = my_view[columns['view_sql']]
 
         # Print the sql for this view.
         print('\nHere is the SQL for this view:\n"{}"'.format(my_view_sql))
@@ -374,72 +336,22 @@ class DBClient(object):
         writer1 = OutputWriter(out_file_name='', align_col=True, col_sep=colsep)
 
         # Find and print columns in this view.
+        sql_x = mq.find_view_col_sql[self.db_type]
+        if skip_operation(sql_x):
+            if sql_x == mq.not_implemented:
+                z = mq.not_implemented
+                print(z.format("VIEW'S COLUMNS", self.db_type.upper()))
+            elif sql_x == mq.not_possible_sql:
+                z = mq.not_possible_sql
+                print(z.format(self.db_type.upper(), self.db_lib_name.upper()))
+            return
         columns_col_names, columns_rows = self._find_view_columns(my_view_name)
+
         writer1.write_rows(columns_rows, columns_col_names)
         writer1.close_output_file()
+
         return
     # End of method database_view_schema.
-
-    # EVERYTHING ABOVE IS DATABASE TYPE INDEPENDENT, NOT BELOW.
-
-    def _find_tables(self) -> list:
-        """ Find the tables in this user's schema.
-
-        Parameters:
-        Returns:
-            table_names (list): list of the tables in this user's schema.
-        """
-        # The query for finding the tables in this user's schema.
-        sql_x = ''
-        bind_vars_x = dict()
-        if self.db_type == oracle:
-            sql_x = "SELECT table_name FROM user_tables ORDER BY table_name"
-        elif self.db_type == access:
-            pass
-        elif self.db_type == sqlite:
-            sql_x = ("SELECT name FROM sqlite_master WHERE type='table' "
-                     "AND name NOT LIKE 'sqlite_%' ORDER BY name")
-        elif self.db_type == sql_server:
-            sql_x = "SELECT name FROM sys.tables WHERE type='U'"
-
-        # Execute the SQL.
-        self.set_sql(sql_x, bind_vars_x)
-        tables_col_names, tables_rows, tables_row_count = self.run_sql()
-
-        # Return the list of table names.
-        return [row[0] for row in tables_rows]
-    # End of method _find_tables.
-
-    def _find_views(self) -> (list, list):
-        """ Find the views in this user's schema.
-
-        Parameters:
-        Returns:
-            views_col_names (list): column names: [view_name, view_sql]
-            view_names (list): list of tuples, each tuple being the columns
-                above for the views in this user's schema.
-        """
-        # The query for finding the views in this user's schema.
-        sql_x = ''
-        bind_vars_x = dict()
-        if self.db_type == oracle:
-            sql_x = ("SELECT view_name, text AS view_sql "
-                     "FROM user_views ORDER BY view_name")
-        elif self.db_type == access:
-            pass
-        elif self.db_type == sqlite:
-            sql_x = ("SELECT name FROM sqlite_master WHERE type='view' "
-                     "ORDER BY name")
-        elif self.db_type == sql_server:
-            sql_x = "SELECT name FROM sys.views WHERE type='V'"
-
-        # Execute the SQL.
-        self.set_sql(sql_x, bind_vars_x)
-        views_col_names, views_rows, views_row_count = self.run_sql()
-
-        # Return the list of view names.
-        return views_col_names, views_rows
-    # End of method _find_views.
 
     def _find_table_columns(self, table_name: str) -> (list, list):
         """ Find the columns in a table.
@@ -453,63 +365,13 @@ class DBClient(object):
             rows (list): list of tuples, each tuple holds info about one column,
                 with the column names listed in col_names.
         """
-        # The SQL to find the columns, their order, and their data types.
-        sql_x = ''
-        bind_vars_x = dict()
-        if self.db_type == oracle:
-            sql_x = """
-            SELECT column_id, c.column_name,
-              case
-                when (data_type LIKE '%CHAR%' OR data_type IN ('RAW','UROWID'))
-                  then data_type||'('||c.char_length||
-                       decode(char_used,'B',' BYTE','C',' CHAR',null)||')'
-                when data_type = 'NUMBER'
-                  then
-                    case
-                      when c.data_precision is null and c.data_scale is null
-                        then 'NUMBER'
-                      when c.data_precision is null and c.data_scale is not null
-                        then 'NUMBER(38,'||c.data_scale||')'
-                      else data_type||'('||c.data_precision||','||c.data_scale||')'
-                      end
-                when data_type = 'BFILE'
-                  then 'BINARY FILE LOB (BFILE)'
-                when data_type = 'FLOAT'
-                  then data_type||'('||to_char(data_precision)||')'||
-                       decode(data_precision, 126,' (double precision)',
-                       63,' (real)',null)
-                else data_type
-                end data_type,
-                decode(nullable,'Y','Yes','No') nullable,
-                data_default,
-                NVL(comments,'(null)') comments
-            FROM user_tab_cols c, user_col_comments com
-            WHERE c.table_name = :table_name
-            AND c.table_name = com.table_name
-            AND c.column_name = com.column_name
-            ORDER BY column_id"""
-            bind_vars_x = {"table_name": table_name}
-        elif self.db_type == access:
-            pass
-        elif self.db_type == sqlite:
-            # TODO pragma not working
-            sql_x = "PRAGMA table_info({})".format(table_name)
-        elif self.db_type == sql_server:
-            # TODO not the correct SQL
-            sql_x = ("SELECT order, name, datatype, nullable, comment "
-                     "FROM sys.columns c, sys.tables t "
-                     "WHERE type='V'")
-            '''
-            SELECT c.column_id, c.Name AS Field_Name, t.Name AS Data_Type, t.max_length AS Length_Size, t.precision AS Precision, is_nullable
-            FROM sys.columns c 
-            INNER JOIN sys.objects o ON o.object_id = c.object_id 
-            LEFT JOIN sys.types t on t.user_type_id  = c.user_type_id 
-            WHERE o.type = 'U' 
-            and o.Name = 'YourTableName' 
-            ORDER BY c.column_id, c.Name
-            '''
+        # The SQL to find the table columns, their order, and their data types.
+        sql_x = mq.find_tab_col_sql[self.db_type]
+        if sql_x.find('{}') > -1:
+            sql_x = sql_x.replace('{}', table_name)
+
         # Execute the SQL.
-        self.set_sql(sql_x, bind_vars_x)
+        self.set_sql(sql_x)
         columns_col_names, columns_rows, columns_row_count = self.run_sql()
 
         # Replace None by '(null)' everywhere.
@@ -531,17 +393,12 @@ class DBClient(object):
             rows (list): list of tuples, each tuple holds info about one column,
                 with the column names listed in col_names.
         """
-        sql_x = ''
-        if self.db_type == oracle:
-            return self._find_table_columns(view_name)
-        elif self.db_type == access:
-            pass
-        elif self.db_type == sqlite:
-            sql_x = ("SELECT name FROM sqlite_master WHERE type='view' "
-                     "ORDER BY name")
+        # The SQL to find the view columns, their order, and their data types.
+        sql_x = mq.find_view_col_sql[self.db_type]
+        if sql_x.find('{}') > -1:
+            sql_x = sql_x.replace('{}', view_name)
 
-        bind_vars_x = dict()
-        self.set_sql(sql_x, bind_vars_x)
+        self.set_sql(sql_x)
         columns_col_names, columns_rows, columns_row_count = self.run_sql()
 
         # Replace None by '(null)' everywhere.
@@ -558,26 +415,17 @@ class DBClient(object):
             table_name (str): the table to find the indexes of.
         Returns:
             col_names (list): column names:
-                [index_name, index_type, table_type, uniqueness]
+                [index_name, index_type, table_type, unique]
             rows (list): list of tuples, each tuple holds info about one index:
-                tuple = (index_name, index_type, table_type, uniqueness).
+                tuple = (index_name, index_type, table_type, unique).
         """
-        # The query for finding the index in this table.
-        sql_x = ''
-        bind_vars_x = dict()
-        if self.db_type == oracle:
-            sql_x = ("SELECT index_name, index_type, table_type, uniqueness "
-                     "FROM user_indexes WHERE table_name = :table_name "
-                     "ORDER BY index_name")
-            bind_vars_x = {"table_name": table_name}
-        elif self.db_type == access:
-            pass
-        elif self.db_type == sqlite:
-            # TODO pragma not working
-            sql_x = "PRAGMA index_list({})".format(table_name)
+        # The SQL to find the indexes for this table.
+        sql_x = mq.find_indexes_sql[self.db_type]
+        if sql_x.find('{}') > -1:
+            sql_x = sql_x.replace('{}', table_name)
 
         # Execute the SQL.
-        self.set_sql(sql_x, bind_vars_x)
+        self.set_sql(sql_x)
         indexes_col_names, indexes_rows, indexes_row_count = self.run_sql()
 
         # Return the index information.
@@ -595,26 +443,13 @@ class DBClient(object):
             rows (list): list of tuples, a tuple has info about 1 index column:
               tuple = (column_position, column_expression/column_name, descend).
         """
-        # The query for finding the columns in this index.
-        sql_x = ''
-        bind_vars_x = dict()
-        if self.db_type == oracle:
-            sql_x = ("SELECT ic.column_position, column_name, descend, "
-                     "column_expression FROM user_ind_columns ic "
-                     "LEFT OUTER JOIN user_ind_expressions ie "
-                     "ON ic.column_position = ie.column_position "
-                     "AND ic.index_name = ie.index_name "
-                     "WHERE ic.index_name = :index_name "
-                     "ORDER BY ic.column_position")
-            bind_vars_x = {"index_name": index_name}
-        elif self.db_type == access:
-            pass
-        elif self.db_type == sqlite:
-            # TODO pragma not working
-            sql_x = "PRAGMA index_info({})".format(index_name)
+        # The SQL to find the columns for this index.
+        sql_x = mq.find_ind_col_sql[self.db_type]
+        if sql_x.find('{}') > -1:
+            sql_x = sql_x.replace('{}', index_name)
 
         # Execute the SQL.
-        self.set_sql(sql_x, bind_vars_x)
+        self.set_sql(sql_x)
         ind_col_col_names, ind_col_rows, ind_col_row_count = self.run_sql()
 
         # Return the information about this index.

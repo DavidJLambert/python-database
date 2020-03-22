@@ -64,11 +64,18 @@ class DBInstance(object):
         z = 'Using {} library version {}.'
         print(z.format(self.db_lib_name, self.db_lib_version))
 
-        # Get primary parameter style.
+        # Get the library's primary parameter style.
         print('Parameter style "{}".'.format(self.db_lib_obj.paramstyle))
         # paramstyle = 'named': cx_Oracle.  Option for sqlite3 & psycopg2.
         # paramstyle = 'qmark': sqlite3 and pyodbc.
         # paramstyle = 'pyformat': pymysql and psycopg2.
+
+        # Get the parameter style we're using.
+        self.paramstyle = paramstyle_for_lib[self.db_lib_name]
+        if self.paramstyle in {named, pyformat}:
+            self.bind_vars = dict()
+        elif self.paramstyle == qmark:
+            self.bind_vars = tuple()
 
         # Connect to database instance.
         self.connection = None
@@ -203,6 +210,26 @@ class DBInstance(object):
         return self.db_type
     # End of method get_db_type.
 
+    def init_bind_vars(self):
+        """ Method to return an empty data structure for bind variables.
+
+        Parameters:
+        Returns:
+            bind_vars: empty data structure for bind variables.
+        """
+        return self.bind_vars
+    # End of method init_bind_vars.
+
+    def get_paramstyle(self):
+        """ Method to return the parameter style.
+
+        Parameters:
+        Returns:
+            paramstyle (str): the parameter style.
+        """
+        return self.paramstyle
+    # End of method get_paramstyle.
+
     def get_db_software_version(self) -> str:
         """ Method to return the database software version.
 
@@ -211,14 +238,14 @@ class DBInstance(object):
             db_software_version (str): database software version.
         """
         sql = 'Nada'
-        if self.db_type in {postgresql, mysql}:
+        if self.db_type in {mysql, postgresql}:
             sql = 'SELECT version()'
-        elif self.db_type == sql_server:
-            sql = 'SELECT @@VERSION'
-        elif self.db_type == sqlite:
-            sql = 'select sqlite_version()'
         elif self.db_type == oracle:
             sql = "SELECT * FROM v$version WHERE banner LIKE 'Oracle%'"
+        elif self.db_type == sqlite:
+            sql = 'select sqlite_version()'
+        elif self.db_type == sqlserver:
+            sql = 'SELECT @@VERSION'
 
         if sql != 'Nada':
             cursor = self.connection.cursor()
@@ -227,11 +254,11 @@ class DBInstance(object):
             cursor.close()
             del cursor
         elif self.db_type == access:
-            version = "There's no way to get the MS Access Version through SQL."
+            version = "unavailable for MS Access through SQL"
         elif self.db_lib_name != pyodbc:
             version = self.connection.version
         else:
-            version = 'Unknown'
+            version = 'unknown'
         return str(version)
     # End of method get_db_software_version.
 
@@ -243,26 +270,26 @@ class DBInstance(object):
             db_software_version (str): database software version.
         """
         z = ''
-        if self.db_lib_name == pymysql:
-            z = ''
-        elif self.db_lib_name == cx_Oracle:
+        if self.db_lib_name == cx_Oracle:
             z = '{}/{}@{}:{}/{}'
         elif self.db_lib_name == psycopg2:
             z = "user='{}' password='{}' host='{}' port='{}' dbname='{}'"
+        elif self.db_lib_name == pymysql:
+            z = ''
         elif self.db_lib_name == pyodbc:
             if self.db_type == access:
                 z = ('DRIVER={{Microsoft Access Driver (*.mdb, *.accdb)}};'
                      'DBQ={};')
-            elif self.db_type == sql_server:
+            elif self.db_type == sqlserver:
                 z = ('DRIVER={{SQL Server}};UID={};PWD={};SERVER={};PORT={};'
                      'DATABASE={}')
         elif self.db_lib_name == sqlite3:
             z = '{}'
         else:
-            print('Unknown db library {}, aborting.'.format(self.db_type))
+            print('Unknown db library "{}", aborting.'.format(self.db_lib_name))
             exit(1)
 
-        if self.db_type in {sql_server, oracle, postgresql}:
+        if self.db_type in {oracle, postgresql, sqlserver}:
             z = z.format(self.username, self.password, self.hostname,
                          self.port_num, self.instance)
         elif self.db_type in file_databases:
@@ -277,8 +304,8 @@ class DBInstance(object):
         Returns:
         """
         print('The database type is "{}".'.format(self.db_type))
-        version = self.get_db_software_version()
-        print('The database software version is {}.'.format(version))
+        z = 'The database software version is {}.'
+        print(z.format(self.db_software_version))
         if self.db_type in file_databases:
             print('The database path is "{}".'.format(self.db_path))
         else:

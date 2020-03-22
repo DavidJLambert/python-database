@@ -1,31 +1,38 @@
 """ MyConstants.py """
-# Supported database types.
-oracle = 'oracle'
-mysql = 'mysql'
-sql_server = 'sql server'
-postgresql = 'postgresql'
-access = 'access'
-sqlite = 'sqlite'
-db_types = [oracle, mysql, sql_server, postgresql, access, sqlite]
 
-# Groupings of database types.
+# SUPPORTED DATABASE TYPES.
+
+access = 'access'
+mysql = 'mysql'
+oracle = 'oracle'
+postgresql = 'postgresql'
+sqlite = 'sqlite'
+sqlserver = 'sql server'
+db_types = [access, mysql, oracle, postgresql, sqlite, sqlserver]
+
+# GROUPINGS OF DATABASE TYPES.
+
 uses_connection_string = set(db_types) - {mysql}
 file_databases = {access, sqlite}
 
-# Database libraries.
+# DATABASE LIBRARIES.
+
 cx_Oracle = 'cx_Oracle'
+psycopg2 = 'psycopg2'
 pymysql = 'pymysql'
 pyodbc = 'pyodbc'
-psycopg2 = 'psycopg2'
 sqlite3 = 'sqlite3'
-lib_name_for_db = {oracle: cx_Oracle, mysql: pymysql, sql_server: pyodbc,
-                   postgresql: psycopg2, access: pyodbc, sqlite: sqlite3}
+lib_name_for_db = {access: pyodbc, mysql: pymysql, oracle: cx_Oracle,
+                   postgresql: psycopg2, sqlite: sqlite3, sqlserver: pyodbc}
 
-# Database client executables.  Their directories must be in PATH.
-db_client_exes = {oracle: 'sqlplus', mysql: 'mysqlsh', sql_server: 'sqlcmd',
-                  postgresql: 'psql', access: 'None', sqlite: 'sqlite3'}
+# DATABASE CLIENT EXECUTABLES.  THEIR DIRECTORIES MUST BE IN PATH.
 
-# Parameterization/bind variable format used here.
-paramstyle_named = {cx_Oracle, sqlite3}
-paramstyle_pyformat = {pymysql, psycopg2}
-paramstyle_qmark = {pyodbc}
+db_client_exes = {access: None, mysql: 'mysqlsh', oracle: 'sqlplus',
+                  postgresql: 'psql', sqlite: 'sqlite3', sqlserver: 'sqlcmd'}
+
+# PARAMETERIZATION/BIND VARIABLE FORMAT USED HERE.
+named = 'named'
+pyformat = 'pyformat'
+qmark = 'qmark'
+paramstyle_for_lib = {cx_Oracle: named, psycopg2: pyformat,
+                      pymysql: pyformat, pyodbc: qmark, sqlite3: named}

@@ -8,9 +8,9 @@ REPOSITORY: https://github.com/DavidJLambert/Python-Universal-DB-Client
 
 AUTHOR: David J. Lambert
 
-VERSION: 0.2.8
+VERSION: 0.6.0
 
-DATE: Mar 2, 2020
+DATE: Mar 21, 2020
 
 PURPOSE:
   testUniversalClient.py does not test function main() in
