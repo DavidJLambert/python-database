@@ -183,7 +183,7 @@ class OutputWriter(object):
             # Format and print the column names.
             formats = ['{{:^{}}}'.format(size) for size in col_sizes]
             col_names_fmt = self.col_sep.join(formats)
-            self.out_file.write('\n' + col_names_fmt.format(*col_names))
+            self.out_file.write(col_names_fmt.format(*col_names))
 
             # Print line of dashes below the column names.
             dashes = ['-' * col_size for col_size in col_sizes]

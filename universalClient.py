@@ -6,7 +6,7 @@ REPOSITORY: https://github.com/DavidJLambert/Python-Universal-DB-Client
 
 AUTHOR: David J. Lambert
 
-VERSION: 0.6.1
+VERSION: 0.6.3
 
 DATE: Mar 22, 2020
 
@@ -41,10 +41,7 @@ if __name__ == '__main__':
     my_colsep = '|'
 
     # GET DATABASE INSTANCE TO USE.
-    db_type1 = sqlserver
-    if db_type1 not in db_types:
-        print("UNKNOWN DATABASE TYPE")
-        exit(1)
+    db_type1 = postgresql
     db_path1 = ''
     username1 = ''
     password1 = 'password'
@@ -79,7 +76,7 @@ if __name__ == '__main__':
         port_num1 = 1433
         instance1 = 'DS2'
     else:
-        print('Unknown database type.')
+        print('UNKNOWN DATABASE TYPE.')
         exit(1)
 
     query = ('SELECT actor, title, price, categoryname\n'

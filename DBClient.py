@@ -157,7 +157,7 @@ class DBClient(object):
         if skip_operation(sql_x):
             if sql_x == mq.not_implemented:
                 z = mq.not_implemented
-                print(z.format("TABLES", self.db_type.upper()))
+                print('\n' + z.format("TABLES", self.db_type.upper()))
             elif sql_x == mq.not_possible_sql:
                 z = mq.not_possible_sql
                 print(z.format(self.db_type.upper(), self.db_lib_name.upper()))
@@ -209,12 +209,13 @@ class DBClient(object):
         if skip_operation(sql_x):
             if sql_x == mq.not_implemented:
                 z = mq.not_implemented
-                print(z.format("TABLE'S COLUMNS", self.db_type.upper()))
+                print('\n' + z.format("TABLE'S COLUMNS", self.db_type.upper()))
             elif sql_x == mq.not_possible_sql:
                 z = mq.not_possible_sql
                 print(z.format(self.db_type.upper(), self.db_lib_name.upper()))
         else:
             columns_col_names, columns_rows = self._find_table_columns(my_table)
+            print('\nHere are the columns for table {}:'.format(my_table))
             writer1.write_rows(columns_rows, columns_col_names)
             print()
 
@@ -223,7 +224,7 @@ class DBClient(object):
         if skip_operation(sql_x):
             if sql_x == mq.not_implemented:
                 z = mq.not_implemented
-                print(z.format("INDEXES", self.db_type.upper()))
+                print('\n' + z.format("INDEXES", self.db_type.upper()))
             elif sql_x == mq.not_possible_sql:
                 z = mq.not_possible_sql
                 print(z.format(self.db_type.upper(), self.db_lib_name.upper()))
@@ -238,7 +239,7 @@ class DBClient(object):
         if skip_operation(sql_x):
             if sql_x == mq.not_implemented:
                 z = mq.not_implemented
-                print(z.format("INDEX'S COLUMNS", self.db_type.upper()))
+                print('\n' + z.format("INDEX'S COLUMNS", self.db_type.upper()))
             elif sql_x == mq.not_possible_sql:
                 z = mq.not_possible_sql
                 print(z.format(self.db_type.upper(), self.db_lib_name.upper()))
@@ -249,20 +250,18 @@ class DBClient(object):
             # Concatenate names of columns in index.  In function-based indexes,
             # use user_ind_expressions.column_expression instead of
             # user_ind_columns.column_name.
-            index_columns = ''
+            index_columns = list()
             for column_pos, column_name, descend, column_expr in ind_col_rows:
-                if index_columns != '':
-                    index_columns += ', '
                 if column_expr is None or column_expr == '':
-                    index_columns += column_name + ' ' + descend
+                    index_columns.append(column_name + ' ' + descend)
                 else:
-                    index_columns += column_expr + ' ' + descend
-            index_columns = '(' + index_columns + ')'
+                    index_columns.append(column_expr + ' ' + descend)
+            index_columns = '(' + ', '.join(index_columns) + ')'
             # Add index_columns to end of each index/row (index is a tuple!).
             indexes_rows[count] = index_row + (index_columns,)
 
         # Print output.
-        print()
+        print('\nHere are the indexes on table {}:'.format(my_table))
         writer1.write_rows(indexes_rows, indexes_col_names)
         writer1.close_output_file()
         return
@@ -281,7 +280,7 @@ class DBClient(object):
         if skip_operation(sql_x):
             if sql_x == mq.not_implemented:
                 z = mq.not_implemented
-                print(z.format("VIEWS", self.db_type.upper()))
+                print('\n' + z.format("VIEWS", self.db_type.upper()))
             elif sql_x == mq.not_possible_sql:
                 z = mq.not_possible_sql
                 print(z.format(self.db_type.upper(), self.db_lib_name.upper()))
@@ -334,7 +333,8 @@ class DBClient(object):
         my_view_sql = my_view[columns['view_sql']]
 
         # Print the sql for this view.
-        print('\nHere is the SQL for this view:\n"{}"'.format(my_view_sql))
+        z = '\nHere is the SQL for view {}:\n"{}"'
+        print(z.format(my_view_name, my_view_sql))
 
         # Set up to write output.
         writer1 = OutputWriter(out_file_name='', align_col=True, col_sep=colsep)
@@ -349,6 +349,7 @@ class DBClient(object):
                 z = mq.not_possible_sql
                 print(z.format(self.db_type.upper(), self.db_lib_name.upper()))
             return
+        print('\nHere are the columns for view {}:'.format(my_view_name))
         columns_col_names, columns_rows = self._find_view_columns(my_view_name)
 
         writer1.write_rows(columns_rows, columns_col_names)

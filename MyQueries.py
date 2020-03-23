@@ -58,7 +58,7 @@ find_views_sql[postgresql] = (
     "  'No' AS is_deletable,\n"
     "  is_trigger_insertable_into, is_trigger_updatable, is_trigger_deletable\n"
     "FROM information_schema.views\n"
-    "WHERE table_schema ='public'\n"
+    "WHERE table_schema = 'public'\n"
     "ORDER BY table_name;")
 find_views_sql[sqlite] = (
     "SELECT name AS view_name, sql AS view_sql,\n"
@@ -68,7 +68,8 @@ find_views_sql[sqlite] = (
     "WHERE type='view'\n"
     "ORDER BY name")
 find_views_sql[sqlserver] = (
-    "SELECT name AS view_name, object_definition(object_id(name)) AS view_sql,\n"
+    "SELECT name AS view_name, object_definition(object_id(name)) AS "
+    "  view_sql,\n"
     "  'No' AS check_option, 'No' AS is_updatable, 'No' AS is_insertable,\n"
     "  'No' AS is_deletable\n"
     "FROM sys.views WHERE type='V'\n"
@@ -78,7 +79,13 @@ find_views_sql[sqlserver] = (
 
 find_tab_col_sql = dict()
 find_tab_col_sql[access] = not_possible_sql
-find_tab_col_sql[mysql] = not_implemented
+find_tab_col_sql[mysql] = (
+    "SELECT ordinal_position AS column_id, column_name,\n"
+    "  column_type AS data_type, is_nullable as nullable,\n"
+    "  column_default AS default_value, column_comment AS comments\n"
+    "FROM INFORMATION_SCHEMA.COLUMNS\n"
+    "WHERE table_name = '{}'\n"
+    "AND table_schema = database()")
 find_tab_col_sql[oracle] = (
     "SELECT column_id, c.column_name,\n"
     "  CASE\n"
@@ -110,7 +117,37 @@ find_tab_col_sql[oracle] = (
     "AND c.table_name = com.table_name\n"
     "AND c.column_name = com.column_name\n"
     "ORDER BY column_id")
-find_tab_col_sql[postgresql] = not_implemented
+find_tab_col_sql[postgresql] = (
+    "SELECT ordinal_position AS column_id, column_name,\n"
+    "  CASE \n"
+    "    WHEN data_type = 'character varying'\n"
+    "      THEN 'varchar('||character_maximum_length||')'\n"
+    "    WHEN data_type = 'bit'\n"
+    "      THEN 'bit('||character_maximum_length||')'\n"
+    "    WHEN data_type = 'bit varying'\n"
+    "      THEN 'varbit('||character_maximum_length||')'\n"
+    "    WHEN data_type = 'character'\n"
+    "      THEN 'char('||character_maximum_length||')'\n"
+    "    WHEN data_type='numeric' AND numeric_precision IS NOT NULL AND "
+    "          numeric_scale IS NOT NULL\n"
+    "      THEN 'numeric('||numeric_precision||','||numeric_scale||')'\n"
+    "    WHEN data_type IN ('bigint', 'boolean', 'date', 'double precision',"
+    "          'integer', 'money', 'numeric', 'real', 'smallint', 'text')\n"
+    "      THEN data_type\n"
+    "    WHEN data_type LIKE 'timestamp%' AND datetime_precision != 6\n"
+    "      THEN REPLACE(data_type, 'timestamp', "
+    "          'timestamp('||datetime_precision||')')\n"
+    "    WHEN data_type LIKE 'time%' AND datetime_precision != 6\n"
+    "      THEN REGEXP_REPLACE(data_type, '^time',"
+    "          'time('||datetime_precision||')')\n"
+    "    ELSE data_type\n"
+    "    END AS data_type,\n"
+    "  is_nullable AS nullable,\n"
+    "  column_default AS default_value,\n"
+    "  '' AS comments\n"
+    "FROM INFORMATION_SCHEMA.COLUMNS\n"
+    "WHERE table_name = '{}'\n"
+    "AND table_schema = 'public'")
 find_tab_col_sql[sqlite] = (
     "SELECT cid AS column_id, name AS column_name, type AS data_type,\n"
     "  CASE\n"
@@ -164,13 +201,16 @@ z = (
     "AND o.name = '{}'\n"
     "ORDER BY c.column_id ")
 find_tab_col_sql[sqlserver] = z.format('U', '{}')
+
 # QUERIES FOR FINDING VIEW COLUMNS.
 
 find_view_col_sql = dict()
 find_view_col_sql[access] = not_possible_sql
-find_view_col_sql[mysql] = not_implemented
+# TODO CHECK THIS
+find_view_col_sql[mysql] = find_tab_col_sql[mysql]
 find_view_col_sql[oracle] = find_tab_col_sql[oracle]
-find_view_col_sql[postgresql] = not_implemented
+# TODO CHECK THIS
+find_view_col_sql[postgresql] = find_tab_col_sql[postgresql]
 find_view_col_sql[sqlite] = find_tab_col_sql[sqlite]
 find_view_col_sql[sqlserver] = z.format('V', '{}')
 

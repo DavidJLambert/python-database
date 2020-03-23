@@ -6,7 +6,7 @@ REPOSITORY: https://github.com/DavidJLambert/Python-Universal-DB-Client
 
 AUTHOR: David J. Lambert
 
-VERSION: 0.6.1
+VERSION: 0.6.3
 
 DATE: Mar 22, 2020
 
