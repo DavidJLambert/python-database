@@ -149,10 +149,10 @@ class OutputWriter(object):
         # Put quotes around columns containing col_sep.
         if self.col_sep != '':
             # Loop through rows.
-            for index1, row in enumerate(all_rows):
+            for item_num1, row in enumerate(all_rows):
                 changed = False
                 # Loop through columns in each row.
-                for index2, column in enumerate(row):
+                for item_num2, column in enumerate(row):
                     # Update row when needed.
                     if self.col_sep in str(column):
                         # Convert tuple to list to make row mutable.
@@ -161,10 +161,10 @@ class OutputWriter(object):
                             changed = True
                         # Enclose values containing col_sep in quotes,
                         # double quotes to escape them.
-                        row[index2] = "'" + str(column).replace("'", "''") + "'"
+                        row[item_num2] = "'" + str(column).replace("'", "''") + "'"
                 # Save updated version of row if changed = True.
                 if changed:
-                    all_rows[index1] = tuple(row)
+                    all_rows[item_num1] = tuple(row)
 
         # Column name widths.
         if col_names is not None:
@@ -197,7 +197,9 @@ class OutputWriter(object):
         row_fmt = self.col_sep.join(formats)
 
         # Print the rows.
-        self.out_file.writelines(['\n' + row_fmt.format(*r) for r in all_rows])
+        for row in all_rows:
+            row = ['' if x is None else x for x in row]
+            self.out_file.write('\n' + row_fmt.format(*row))
         # If printed to file, announce that.
         if self.out_file_name != '':
             print('Just wrote output to "{}".'.format(self.out_file_name))

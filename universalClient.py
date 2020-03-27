@@ -6,9 +6,9 @@ REPOSITORY: https://github.com/DavidJLambert/Python-Universal-DB-Client
 
 AUTHOR: David J. Lambert
 
-VERSION: 0.6.3
+VERSION: 0.6.4
 
-DATE: Mar 22, 2020
+DATE: Mar 26, 2020
 
 For more information, see README.rst.
 """
@@ -41,7 +41,7 @@ if __name__ == '__main__':
     my_colsep = '|'
 
     # GET DATABASE INSTANCE TO USE.
-    db_type1 = postgresql
+    db_type1 = oracle
     db_path1 = ''
     username1 = ''
     password1 = 'password'
@@ -86,7 +86,7 @@ if __name__ == '__main__':
     if db_type1 == access:
         sql_for_client = ''
     elif db_type1 == mysql:
-        # TEXT OF COMMANDS TO RUN IN MYSQLSH FOR MYSQL.
+        # TEXT OF COMMANDS TO RUN IN MYSQLSH.
         # Explanation of commands:
         # SET @x := 'y';          Create variable "x", give it the value "y"
         z = "SET @actor := 'CHEVY FOSTER';\n"
@@ -99,7 +99,7 @@ if __name__ == '__main__':
         # SET SQLNUMBER OFF       Turn off numbers printed for multi-line input
         # SET TRIMOUT ON          Trim trailing spaces
         # SET TAB OFF             No tabs in the output
-        # SET NEWPAGE 0           No lines between page top and top title
+        # SET NEWPAGE NONE        Do nothing at page breaks
         # SET LINESIZE 256        Characters/line
         # SET WRAP OFF            Lines don't wrap, truncated to match LINESIZE
         # SET COLSEP "|"          Set column separator to pipe character
@@ -114,7 +114,7 @@ if __name__ == '__main__':
               'SET SQLNUMBER OFF\n'
               'SET TRIMOUT ON\n'
               'SET TAB OFF\n'
-              'SET NEWPAGE 0\n'
+              'SET NEWPAGE NONE\n'
               'SET LINESIZE 256\n'
               'SET WRAP OFF\n'
               'SET COLSEP "{}"\n'
@@ -127,12 +127,10 @@ if __name__ == '__main__':
         z2 = '\nexit\n'
         sql_for_client = z1.format(my_colsep) + query + param + z2
     elif db_type1 == postgresql:
-        # TEXT OF COMMANDS TO RUN IN MYSQLSH FOR MYSQL.
+        # TEXT OF COMMANDS TO RUN IN PSQL.
         # Explanation of commands:
-        # \pset null '(null)'          Print nulls as '(null)', not ''
         # \pset footer off             Turn off query output footer (# rows)
-        z1 = ("\\pset null '(null)'\n"
-              '\\pset footer off\n'
+        z1 = ('\\pset footer off\n'
               'PREPARE x9q7z (text) AS ')
         param = "$1;"
         z2 = "\nEXECUTE x9q7z ('CHEVY FOSTER');\n"
@@ -144,18 +142,16 @@ if __name__ == '__main__':
         # .echo off                      Set command echo off
         # .separator "|"                 Set column separator to pipe character
         # .headers on                    Put in column headings (column names)
-        # .nullvalue "(null)"            Print "(null)" for NULL, not ""
         # .parameter set :x 3            Create variable "x", set it to 3
         z1 = ('.echo off\n'
               '.separator "{}"\n'
               '.headers on\n'
-              '.nullvalue "(null)"\n'
               ".parameter set :actor 'CHEVY FOSTER'\n")
         param = ":actor;"
         z2 = '\n.exit\n'
         sql_for_client = z1.format(my_colsep) + query + param + z2
     elif db_type1 == sqlserver:
-        # TEXT OF COMMANDS TO RUN IN SQLCMD FOR SQL SERVER.
+        # TEXT OF COMMANDS TO RUN IN SQLCMD.
         # Explanation of commands:
         # :Setvar SQLCMDCOLSEP |         Set column separator to pipe character
         # SET NOCOUNT ON                 Turn off "rows affected"
@@ -179,8 +175,7 @@ if __name__ == '__main__':
     # Don't use write_rows, probably the db client output not all columnar,
     # it'll crash the database client.
     if len(sql_out) > 0:
-        z = '\nTHE OUTPUT FROM RUNNING COMMANDS IN {}:'
-        print(z.format(db_client_exe))
+        print('\nTHE OUTPUT FROM RUNNING COMMANDS IN {}:'.format(db_client_exe))
         for line in sql_out:
             print(line)
         print('ALL DONE WITH {}.'.format(db_client_exe))

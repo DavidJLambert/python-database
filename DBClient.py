@@ -118,10 +118,10 @@ class DBClient(object):
                     exit(1)
                 elif sql_type in {'INSERT', 'UPDATE', 'DELETE'}:
                     self.cursor.commit()
-                elif sql_type not in {'SELECT', 'PRAGMA'}:
+                elif sql_type not in {'SELECT'}:
                     # Not a CRUD statement.
                     pass
-                elif sql_type in {'SELECT', 'PRAGMA'}:
+                elif sql_type in {'SELECT'}:
                     # Fetch rows.  Fetchall for large number of rows a problem.
                     all_rows = self.cursor.fetchall()
 
@@ -141,6 +141,66 @@ class DBClient(object):
                 return col_names, all_rows, row_count
     # End of method run_sql.
 
+    def _print_skip_op(self, sql_x: str, object_str: str) -> None:
+        """ Method to print message if skipping operation in
+            database_table_schema or database_view_schema.
+
+        Parameters:
+            sql_x (str): most of message to print.
+            object_str (str): type of object where we're skipping looking at in
+                              data dictionary.
+        Returns:
+        """
+        if sql_x == mq.not_implemented:
+            print('\n' + sql_x.format(object_str, self.db_type.upper()))
+        elif sql_x == mq.not_possible_sql:
+            print(sql_x.format(self.db_type.upper(), self.db_lib_name.upper()))
+        return
+    # End of function _print_skip_op.
+
+    def _pick_one(self, choices: list, choice_type: str) -> int:
+        """ Method to print message if skipping operation in
+            database_table_schema or database_view_schema.
+
+        Parameters:
+            choices (list): list of choices (string) to pick one from.
+            choice_type (str): the name of the type being chosen.
+        Returns:
+            choice (int): the choice made.
+        """
+        if len(choices) == 0:
+            print('You own no tables!  Nothing to see!')
+            return 0
+        elif len(choices) == 1:
+            # Only one table.  Choose it.
+            choice_name = choices[0]
+            print('\nYou have one {}: {}.'.format(choice_type, choice_name))
+        else:
+            # Ask end-user to choose a table.
+            prompt = '\nHere are the {} available to you:\n'.format(choice_type)
+            for item_num, choice_name in enumerate(choices):
+                prompt += str(item_num + 1) + ': ' + choice_name + '\n'
+            prompt += ('Enter the number for the {} you want info about,\n'
+                       'Or enter "Q" to quit:\n'.format(choice_type))
+
+            # Keep looping until valid choice made.
+            while True:
+                choice = input(prompt).strip().upper()
+                # Interpret the choice.
+                if choice == "Q":
+                    print('Quitting as requested.')
+                    exit(0)
+                choice = int(choice) - 1
+                if choice in range(len(choices)):
+                    choice_name = choices[choice]
+                    break
+                else:
+                    print('Invalid choice, please try again.')
+            print('\nYou chose {} "{}":.'.format(choice_type, choice_name))
+
+        return choice
+    # End of function _pick_one.
+
     # THE REST OF THE METHODS ALL HAVE TO DO WITH SEEING THE DATABASE SCHEMA.
 
     # EVERYTHING ABOVE IS DB_TYPE INDEPENDENT.  BELOW, NOT INDEPENDENT.
@@ -152,104 +212,57 @@ class DBClient(object):
             colsep (str): column separator to use.
         Returns:
         """
-        # The query to find the tables in this user's data dictionary views.
-        sql_x = mq.find_tables_sql[self.db_type]
-        if skip_operation(sql_x):
-            if sql_x == mq.not_implemented:
-                z = mq.not_implemented
-                print('\n' + z.format("TABLES", self.db_type.upper()))
-            elif sql_x == mq.not_possible_sql:
-                z = mq.not_possible_sql
-                print(z.format(self.db_type.upper(), self.db_lib_name.upper()))
+        # Find tables.
+        skip_op, table_col_names, table_rows =\
+            self._data_dict_fetch(mq.tables, '')
+        if skip_op:
             return
 
-        # Execute the SQL.
-        # find_tables_sql has no parameters.
-        self.set_sql(sql_x)
-        tables_col_names, tables_rows, tables_row_count = self.run_sql()
+        # Create map from column name to item #, so items accessible by column
+        # name instead of by item #.
+        columns = {name.lower(): item_num for
+                   item_num, name in enumerate(table_col_names)}
 
-        # Extract the list of table names.
-        tables = [row[0] for row in tables_rows]
+        # Extract a list of table names.
+        table_names = [table[columns['table_name']] for table in table_rows]
 
-        if len(tables) == 0:
-            print('You own no tables!  Nothing to see!')
-            return
-        elif len(tables) == 1:
-            # Only one table.  Choose that table to show.
-            my_table = tables[0]
-            print('\nYou have only one table: {}.'.format(my_table))
-        else:
-            # Ask end-user to choose a table.
-            prompt = '\nHere are the tables available to you:\n'
-            for index, table in enumerate(tables):
-                prompt += str(index + 1) + ': ' + table + '\n'
-            prompt += ('Enter the number for the table you want info about,\n'
-                       'Or enter "Q" to quit:\n')
+        # Choose a table.
+        choice = self._pick_one(table_names, "table")
 
-            # Keep looping until valid choice made.
-            while True:
-                choice = input(prompt).strip().upper()
-                # Interpret the choice.
-                if choice == "Q":
-                    print('Quitting as requested.')
-                    exit(0)
-                choice = int(choice)
-                if choice in range(len(tables)):
-                    my_table = tables[choice - 1]
-                    break
-                else:
-                    print('Invalid choice, please try again.')
-            print('\nYou chose table "{}".'.format(my_table))
-
-        # Set up to write output.
-        writer1 = OutputWriter(out_file_name='', align_col=True, col_sep=colsep)
+        # Unpack information.
+        my_table_name = table_names[choice]
 
         # Find and print columns in this table.
-        sql_x = mq.find_tab_col_sql[self.db_type]
-        if skip_operation(sql_x):
-            if sql_x == mq.not_implemented:
-                z = mq.not_implemented
-                print('\n' + z.format("TABLE'S COLUMNS", self.db_type.upper()))
-            elif sql_x == mq.not_possible_sql:
-                z = mq.not_possible_sql
-                print(z.format(self.db_type.upper(), self.db_lib_name.upper()))
-        else:
-            columns_col_names, columns_rows = self._find_table_columns(my_table)
-            print('\nHere are the columns for table {}:'.format(my_table))
-            writer1.write_rows(columns_rows, columns_col_names)
-            print()
+        skip_op, columns_col_names, columns_rows =\
+            self._data_dict_fetch(mq.tab_col, my_table_name)
+
+        # Write output.
+        writer1 = OutputWriter(out_file_name='', align_col=True, col_sep=colsep)
+        writer1.write_rows(columns_rows, columns_col_names)
+        print()
 
         # Find all indexes in this table.
-        sql_x = mq.find_indexes_sql[self.db_type]
-        if skip_operation(sql_x):
-            if sql_x == mq.not_implemented:
-                z = mq.not_implemented
-                print('\n' + z.format("INDEXES", self.db_type.upper()))
-            elif sql_x == mq.not_possible_sql:
-                z = mq.not_possible_sql
-                print(z.format(self.db_type.upper(), self.db_lib_name.upper()))
+        skip_op, indexes_col_names, indexes_rows =\
+            self._data_dict_fetch(mq.indexes, my_table_name)
+        if skip_op:
             return
-        indexes_col_names, indexes_rows = self._find_indexes(my_table)
 
         # Add 'INDEX_COLUMNS' to end of col_names.
         indexes_col_names.append('INDEX_COLUMNS')
 
+        # Create map from column name to item #, so items accessible by
+        # column name instead of by item #.
+        columns = {name.lower(): item_num for
+                   item_num, name in enumerate(indexes_col_names)}
+
         # Go through indexes, add index_columns to end of each index/row.
-        sql_x = mq.find_ind_col_sql[self.db_type]
-        if skip_operation(sql_x):
-            if sql_x == mq.not_implemented:
-                z = mq.not_implemented
-                print('\n' + z.format("INDEX'S COLUMNS", self.db_type.upper()))
-            elif sql_x == mq.not_possible_sql:
-                z = mq.not_possible_sql
-                print(z.format(self.db_type.upper(), self.db_lib_name.upper()))
-            return
-        for count, index_row in enumerate(indexes_rows):
-            index_name = index_row[0]
-            _, ind_col_rows = self._find_index_columns(index_name)
-            # Concatenate names of columns in index.  In function-based indexes,
-            # use user_ind_expressions.column_expression instead of
-            # user_ind_columns.column_name.
+        for item_num, index_row in enumerate(indexes_rows):
+            index_name = index_row[columns['index_name']]
+            skip_op, _, ind_col_rows =\
+                self._data_dict_fetch(mq.ind_col, index_name)
+            if skip_op:
+                return
+            # Concatenate names of columns in index.
             index_columns = list()
             for column_pos, column_name, descend, column_expr in ind_col_rows:
                 if column_expr is None or column_expr == '':
@@ -258,10 +271,10 @@ class DBClient(object):
                     index_columns.append(column_expr + ' ' + descend)
             index_columns = '(' + ', '.join(index_columns) + ')'
             # Add index_columns to end of each index/row (index is a tuple!).
-            indexes_rows[count] = index_row + (index_columns,)
+            indexes_rows[item_num] = index_row + (index_columns,)
 
         # Print output.
-        print('\nHere are the indexes on table {}:'.format(my_table))
+        print('\nHere are the indexes on table {}:'.format(my_table_name))
         writer1.write_rows(indexes_rows, indexes_col_names)
         writer1.close_output_file()
         return
@@ -274,190 +287,71 @@ class DBClient(object):
             colsep (str): column separator to use.
         Returns:
         """
-        # The query for finding the views in this user's schema.
-        # find_views_sql has no parameters.
-        sql_x = mq.find_views_sql[self.db_type]
-        if skip_operation(sql_x):
-            if sql_x == mq.not_implemented:
-                z = mq.not_implemented
-                print('\n' + z.format("VIEWS", self.db_type.upper()))
-            elif sql_x == mq.not_possible_sql:
-                z = mq.not_possible_sql
-                print(z.format(self.db_type.upper(), self.db_lib_name.upper()))
-            return
-
         # Find views
-        self.set_sql(sql_x)
         # TODO need to use all fields and make return values consistent.
-        # views_col_names: view_name, view_sql, check_option, is_updatable,
-        #                  is_insertable, is_deletable
-        views_col_names, views, views_row_count = self.run_sql()
+        skip_op, view_col_names, view_rows = self._data_dict_fetch(mq.views, '')
 
-        # Create mapping from column name to index, so I can access items by
-        # column name instead of by index.
-        columns = {name.lower(): index for
-                   index, name in enumerate(views_col_names)}
+        # Create mapping from column name to item #, so I can access items by
+        # column name instead of by item #.
+        columns = {name.lower(): item_num for
+                   item_num, name in enumerate(view_col_names)}
 
-        if len(views) == 0:
-            print('You own no views!  Nothing to see!')
-            return
-        elif len(views) == 1:
-            # Only one view.  Choose it.
-            my_view = views[0]
-            z = '\nYou have only one view: {}.'
-            print(z.format(my_view[columns['view_name']]))
-        else:
-            # Ask end-user to choose a view.
-            prompt = '\nHere are the views available to you:\n'
-            for index, (view_name, view_sql) in enumerate(views):
-                prompt += str(index + 1) + ': ' + view_name + '\n'
-            prompt += ('Enter the number for the view you want info about,\n'
-                       'Or enter "Q" to quit:\n')
+        # Extract a list of view names.
+        view_names = [view[columns['view_name']] for view in view_rows]
 
-            # Keep looping until valid choice made.
-            while True:
-                choice = input(prompt).strip().upper()
-                # Interpret the choice.
-                if choice == "Q":
-                    print('Quitting as requested.')
-                    exit(0)
-                choice = int(choice)
-                if choice in range(len(views)):
-                    my_view = views[choice - 1]
-                    break
-                else:
-                    print('Invalid choice, please try again.')
+        # Choose a view.
+        choice = self._pick_one(view_names, "view")
 
         # Unpack information.
-        my_view_name = my_view[columns['view_name']]
-        my_view_sql = my_view[columns['view_sql']]
+        my_view_name = view_names[choice]
+        my_view_sql = view_rows[choice][columns['view_sql']]
 
         # Print the sql for this view.
         z = '\nHere is the SQL for view {}:\n"{}"'
         print(z.format(my_view_name, my_view_sql))
 
-        # Set up to write output.
-        writer1 = OutputWriter(out_file_name='', align_col=True, col_sep=colsep)
-
         # Find and print columns in this view.
-        sql_x = mq.find_view_col_sql[self.db_type]
-        if skip_operation(sql_x):
-            if sql_x == mq.not_implemented:
-                z = mq.not_implemented
-                print(z.format("VIEW'S COLUMNS", self.db_type.upper()))
-            elif sql_x == mq.not_possible_sql:
-                z = mq.not_possible_sql
-                print(z.format(self.db_type.upper(), self.db_lib_name.upper()))
-            return
         print('\nHere are the columns for view {}:'.format(my_view_name))
-        columns_col_names, columns_rows = self._find_view_columns(my_view_name)
+        skip_op, columns_col_names, columns_rows =\
+            self._data_dict_fetch(mq.view_col, my_view_name)
 
+        # Write output.
+        writer1 = OutputWriter(out_file_name='', align_col=True, col_sep=colsep)
         writer1.write_rows(columns_rows, columns_col_names)
         writer1.close_output_file()
 
         return
     # End of method database_view_schema.
 
-    def _find_table_columns(self, table_name: str) -> (list, list):
-        """ Find the columns in a table.
+    def _data_dict_fetch(self, obj_type: str, obj_name: str) -> (bool, list,
+                                                                 list):
+        """ Find data dictionary information about a type of object.
 
         Parameters:
-            table_name (str): the table to find the columns of.
+            obj_type (str): the type of object to collect info about (tables,
+                table columns, views, view columns, indexes, or index columns).
+            obj_name (str): the name of the object to collect info about (table
+                for table columns, view for view columns, table for indexes, or
+                index for index columns).
         Returns:
-            col_names (list): column names:
-                [column_id, column_name, data_type, nullable, default_value,
-                 comments]
-            rows (list): list of tuples, each tuple holds info about one column,
-                with the column names listed in col_names.
-        """
-        # The SQL to find the table columns, their order, and their data types.
-        sql_x = mq.find_tab_col_sql[self.db_type]
-        if sql_x.find('{}') > -1:
-            sql_x = sql_x.replace('{}', table_name)
-
-        # Execute the SQL.
-        self.set_sql(sql_x)
-        columns_col_names, columns_rows, columns_row_count = self.run_sql()
-
-        # Replace None by '(null)' everywhere.
-        columns_rows = [[no_none(x, '(null)') for x in r] for r in columns_rows]
-
-        # Return the column information.
-        return columns_col_names, columns_rows
-    # End of method _find_table_columns.
-
-    def _find_view_columns(self, view_name: str) -> (list, list):
-        """ Find the columns in a view.
-
-        Parameters:
-            view_name (str): the table to find the columns of.
-        Returns:
-            col_names (list): column names:
-                [column_id, column_name, data_type, nullable, default_value,
-                 comments]
-            rows (list): list of tuples, each tuple holds info about one column,
-                with the column names listed in col_names.
-        """
-        # The SQL to find the view columns, their order, and their data types.
-        sql_x = mq.find_view_col_sql[self.db_type]
-        if sql_x.find('{}') > -1:
-            sql_x = sql_x.replace('{}', view_name)
-
-        self.set_sql(sql_x)
-        columns_col_names, columns_rows, columns_row_count = self.run_sql()
-
-        # Replace None by '(null)' everywhere.
-        columns_rows = [[no_none(x, '(null)') for x in r] for r in columns_rows]
-
-        # Return the column information.
-        return columns_col_names, columns_rows
-    # End of method _find_view_columns.
-
-    def _find_indexes(self, table_name: str) -> (list, list):
-        """ Find the indexes in a table.
-
-        Parameters:
-            table_name (str): the table to find the indexes of.
-        Returns:
-            col_names (list): column names:
-                [index_name, index_type, table_type, unique]
-            rows (list): list of tuples, each tuple holds info about one index:
-                tuple = (index_name, index_type, table_type, unique).
-        """
-        # The SQL to find the indexes for this table.
-        sql_x = mq.find_indexes_sql[self.db_type]
-        if sql_x.find('{}') > -1:
-            sql_x = sql_x.replace('{}', table_name)
-
-        # Execute the SQL.
-        self.set_sql(sql_x)
-        indexes_col_names, indexes_rows, indexes_row_count = self.run_sql()
-
-        # Return the index information.
-        return indexes_col_names, indexes_rows
-    # End of method _find_indexes.
-
-    def _find_index_columns(self, index_name: str) -> (list, list):
-        """ Find the columns in an index.
-
-        Parameters:
-            index_name (str): the index to find the columns in.
-        Returns:
-            col_names (list): column names:
-                [column_position, column_name, descend, column_expression]
-            rows (list): list of tuples, a tuple has info about 1 index column:
-              tuple = (column_position, column_expression/column_name, descend).
+            skip_op (bool): whether or this operation was skipped.
+            column_names (list): the names of the columns in "rows".
+            rows (list): list of tuples, a tuple has info about 1 object
         """
         # The SQL to find the columns for this index.
-        sql_x = mq.find_ind_col_sql[self.db_type]
-        if sql_x.find('{}') > -1:
-            sql_x = sql_x.replace('{}', index_name)
+        sql_x = mq.data_dict_sql[obj_type, self.db_type]
 
-        # Execute the SQL.
-        self.set_sql(sql_x)
-        ind_col_col_names, ind_col_rows, ind_col_row_count = self.run_sql()
+        if is_skip_operation(sql_x):
+            self._print_skip_op(sql_x, obj_type)
+            return True, list(), list()
+        else:
+            if sql_x.find('{}') > -1:
+                sql_x = sql_x.replace('{}', obj_name)
 
-        # Return the information about this index.
-        return ind_col_col_names, ind_col_rows
-    # End of method _find_index_columns.
+            # Execute the SQL.
+            self.set_sql(sql_x)
+            column_names, rows, row_count = self.run_sql()
+            # Return the information about this object.
+            return False, column_names, rows
+    # End of method _data_dict_fetch.
 # End of Class DBClient.

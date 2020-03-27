@@ -17,26 +17,7 @@ def print_stacktrace() -> None:
 # End of function print_stacktrace.
 
 
-def no_none(might_be_none: str, if_its_none: str) -> str:
-    """ If argument is None, change it.
-        Only used in DBClient.
-
-    Parameters:
-        might_be_none (str): string that might be None.
-        if_its_none (str): if might_be_none is None, change it to this.
-    Returns:
-        its_not_none (str): guaranteed to not be None.
-    """
-    if might_be_none is None:
-        its_not_none = if_its_none
-    else:
-        its_not_none = might_be_none
-
-    return its_not_none
-# End of function no_none.
-
-
-def skip_operation(sql: str) -> (bool, str):
+def is_skip_operation(sql: str) -> bool:
     """ Detect whether to skip this operation and operations dependent on it
         Only used in DBClient.
 
@@ -48,7 +29,7 @@ def skip_operation(sql: str) -> (bool, str):
     from MyQueries import not_implemented, not_possible_sql
     skip = (sql in {not_implemented, not_possible_sql})
     return skip
-# End of function print_stacktrace.
+# End of function is_skip_operation.
 
 
 def os_python_version_info() -> (str, int, int):
@@ -101,7 +82,7 @@ def ask_for_password(username: str) -> str:
 # End of function ask_for_password.
 
 
-def file_in_path(os: str, filename: str) -> bool:
+def is_file_in_path(os: str, filename: str) -> bool:
     """ Method to find if file in PATH.
         Only used in sql_cmdline.
 
@@ -126,11 +107,12 @@ def file_in_path(os: str, filename: str) -> bool:
                         found = True
                         break
     return found
-# End of function file_in_path.
+# End of function is_file_in_path.
 
 
 def sql_cmdline(os: str, sql: str, db_type: str, db_path: str, username: str,
-                password: str, hostname: str, port_num: int, instance: str) -> list:
+                password: str, hostname: str, port_num: int,
+                instance: str) -> list:
     """ Run SQL against database using command line client.
         Only used in __main__.
 
@@ -150,18 +132,14 @@ def sql_cmdline(os: str, sql: str, db_type: str, db_path: str, username: str,
     from subprocess import Popen, PIPE
 
     db_client_exe = db_client_exes[db_type]
-    if db_client_exe is None:
+    cmd = ''
+
+    if db_type == access or db_client_exe == '':
         z = '{} DOES NOT HAVE A COMMAND LINE INTERFACE.'
         print(z.format(db_type).upper())
         return list()
-
-    if not file_in_path(os, db_client_exe):
+    elif not is_file_in_path(os, db_client_exe):
         print('Did not find {} in PATH.'.format(db_client_exe))
-        return list()
-
-    cmd = ''
-    if db_type == access:
-        print('No command line available for MS Access.')
         return list()
     elif db_type == mysql:
         conn_str = '--uri={}:{}@{}:{}/{}'.format(username, password, hostname,

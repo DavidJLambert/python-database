@@ -27,7 +27,7 @@ lib_name_for_db = {access: pyodbc, mysql: pymysql, oracle: cx_Oracle,
 
 # DATABASE CLIENT EXECUTABLES.  THEIR DIRECTORIES MUST BE IN PATH.
 
-db_client_exes = {access: None, mysql: 'mysqlsh', oracle: 'sqlplus',
+db_client_exes = {access: '', mysql: 'mysqlsh', oracle: 'sqlplus',
                   postgresql: 'psql', sqlite: 'sqlite3', sqlserver: 'sqlcmd'}
 
 # PARAMETERIZATION/BIND VARIABLE FORMAT USED HERE.
