@@ -1,7 +1,7 @@
 """ DBClient.py """
-from DBInstance import *
 from OutputWriter import *
 import MyQueries as mq
+from DBInstance import *
 
 
 class DBClient(object):
@@ -156,50 +156,7 @@ class DBClient(object):
         elif sql_x == mq.not_possible_sql:
             print(sql_x.format(self.db_type.upper(), self.db_lib_name.upper()))
         return
-    # End of function _print_skip_op.
-
-    def _pick_one(self, choices: list, choice_type: str) -> int:
-        """ Method to print message if skipping operation in
-            database_table_schema or database_view_schema.
-
-        Parameters:
-            choices (list): list of choices (string) to pick one from.
-            choice_type (str): the name of the type being chosen.
-        Returns:
-            choice (int): the choice made.
-        """
-        if len(choices) == 0:
-            print('You own no tables!  Nothing to see!')
-            return 0
-        elif len(choices) == 1:
-            # Only one table.  Choose it.
-            choice_name = choices[0]
-            print('\nYou have one {}: {}.'.format(choice_type, choice_name))
-        else:
-            # Ask end-user to choose a table.
-            prompt = '\nHere are the {} available to you:\n'.format(choice_type)
-            for item_num, choice_name in enumerate(choices):
-                prompt += str(item_num + 1) + ': ' + choice_name + '\n'
-            prompt += ('Enter the number for the {} you want info about,\n'
-                       'Or enter "Q" to quit:\n'.format(choice_type))
-
-            # Keep looping until valid choice made.
-            while True:
-                choice = input(prompt).strip().upper()
-                # Interpret the choice.
-                if choice == "Q":
-                    print('Quitting as requested.')
-                    exit(0)
-                choice = int(choice) - 1
-                if choice in range(len(choices)):
-                    choice_name = choices[choice]
-                    break
-                else:
-                    print('Invalid choice, please try again.')
-            print('\nYou chose {} "{}":.'.format(choice_type, choice_name))
-
-        return choice
-    # End of function _pick_one.
+    # End of method _print_skip_op.
 
     # THE REST OF THE METHODS ALL HAVE TO DO WITH SEEING THE DATABASE SCHEMA.
 
@@ -227,7 +184,10 @@ class DBClient(object):
         table_names = [table[columns['table_name']] for table in table_rows]
 
         # Choose a table.
-        choice = self._pick_one(table_names, "table")
+        choice = pick_one(table_names, "table")
+        if choice == -1:
+            # No tables.
+            return
 
         # Unpack information.
         my_table_name = table_names[choice]
@@ -300,7 +260,10 @@ class DBClient(object):
         view_names = [view[columns['view_name']] for view in view_rows]
 
         # Choose a view.
-        choice = self._pick_one(view_names, "view")
+        choice = pick_one(view_names, "view")
+        if choice == -1:
+            # No views.
+            return
 
         # Unpack information.
         my_view_name = view_names[choice]
@@ -354,4 +317,24 @@ class DBClient(object):
             # Return the information about this object.
             return False, column_names, rows
     # End of method _data_dict_fetch.
+
+    def _bindvar_characterize(self, query: str) -> dict:
+        """ Find the bind variables in a query, name them, and find their
+            data types.
+
+        Parameters:
+            query (str): the query containing at least one bind variable.
+        Returns:
+            bind_vars (dict): the bind vars in the query.
+                The dict key is the bind variable number (1, 2, ...).
+                The dict value is a list, with 3 items:
+                    1: the bind variable name
+                    2: the bind variable value
+                    3: the bind variable datatype (appropriate to db_type).
+        """
+        # The SQL to find the columns for this index.
+        sql_x = mq.data_dict_sql[obj_type, self.db_type]
+
+    # End of method _bindvar_characterize.
+
 # End of Class DBClient.

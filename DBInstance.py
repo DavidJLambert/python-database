@@ -56,6 +56,9 @@ class DBInstance(object):
         self.db_lib_name = lib_name_for_db[self.db_type]
         self.db_lib_obj = __import__(self.db_lib_name)
 
+        # Appropriate database client executable.
+        self.db_client_exe = db_client_exes[self.db_type]
+
         # Get database library version.
         if self.db_lib_name in {psycopg2, pymysql}:
             self.db_lib_version = self.db_lib_obj.__version__
@@ -316,4 +319,59 @@ class DBInstance(object):
             print(self.get_connection_status())
         return
     # End of method print_all_connection_parameters.
+
+    def sql_cmdline(self, os: str, sql: str) -> list:
+        """ Run SQL against database using command line client.
+
+        Parameters:
+            os (str): 'Windows', 'Linux', or 'Darwin'
+            sql (str): text of the SQL to run.
+        Returns:
+            sql_output (list): rows of output.
+        """
+        from subprocess import Popen, PIPE
+
+        cmd = ''
+        args = (self.username, self.password, self.hostname, self.port_num,
+                self.instance)
+        if self.db_type == access or self.db_client_exe == '':
+            z = '{} DOES NOT HAVE A COMMAND LINE INTERFACE.'
+            print(z.format(self.db_type).upper())
+            return list()
+        elif not is_file_in_path(os, self.db_client_exe):
+            print('Did not find {} in PATH.'.format(self.db_client_exe))
+            return list()
+        elif self.db_type == mysql:
+            conn_str = '--uri={}:{}@{}:{}/{}'.format(*args)
+            cmd = [self.db_client_exe, conn_str, '--table', '--sql',
+                   '--quiet-start']
+        elif self.db_type == oracle:
+            conn_str = '{}/{}@{}:{}/{}'.format(*args)
+            cmd = [self.db_client_exe, conn_str]
+        elif self.db_type == postgresql:
+            conn_str = 'postgresql://{}:{}@{}:{}/{}'.format(*args)
+            cmd = [self.db_client_exe, '-d', conn_str]
+        elif self.db_type == sqlite:
+            cmd = [self.db_client_exe, self.db_path]
+        elif self.db_type == sqlserver:
+            host_port = '{},{}'.format(self.hostname, self.port_num)
+            cmd = [self.db_client_exe, '-U', self.username, '-P', self.password,
+                   '-S', host_port, '-d', self.instance, '-s', "|"]
+        else:
+            print('Not yet implemented for {}.'.format(self.db_type))
+            return list()
+        p = Popen(cmd,  stdin=PIPE, stdout=PIPE, stderr=PIPE)
+        (stdout, stderr) = p.communicate(sql.encode('utf-8'))
+        stderr = stderr.decode('utf-8').split("\n")
+        # MySQL warning to ignore.
+        z = [('WARNING: Using a password on the command line interface can be '
+              'insecure.'), '']
+        if len(stderr) > 0 and stderr != [''] and stderr != z:
+            print("PROBLEM IN SQL_CMDLINE:")
+            print('cmd: ', cmd)
+            print('sql: ', sql)
+            print('stderr: ', stderr)
+        return stdout.decode('utf-8').split("\n")
+    # End of method sql_cmdline.
+
 # End of Class DBInstance.

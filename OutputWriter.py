@@ -205,4 +205,5 @@ class OutputWriter(object):
             print('Just wrote output to "{}".'.format(self.out_file_name))
         return
     # End of method write_rows.
+
 # End of Class OutputWriter.

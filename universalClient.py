@@ -6,9 +6,9 @@ REPOSITORY: https://github.com/DavidJLambert/Python-Universal-DB-Client
 
 AUTHOR: David J. Lambert
 
-VERSION: 0.6.4
+VERSION: 0.6.5
 
-DATE: Mar 26, 2020
+DATE: Mar 28, 2020
 
 For more information, see README.rst.
 """
@@ -17,8 +17,9 @@ For more information, see README.rst.
 
 # The import hierarchy:
 #     v------- MyQueries    <-- MyConstants
-# DBClient <-- OutputWriter <-- MyFunctions <-- MyConstants & sys
-#     ^------- DBInstance   <-- MyConstants
+# DBClient <-- OutputWriter <-- MyFunctions <-- sys
+#     ^------- DBInstance   <-- MyFunctions <-- sys
+#                   ^-----------MyConstants
 
 from DBClient import *
 
@@ -41,14 +42,14 @@ if __name__ == '__main__':
     my_colsep = '|'
 
     # GET DATABASE INSTANCE TO USE.
-    db_type1 = oracle
+    db_type1 = sqlite
     db_path1 = ''
     username1 = ''
     password1 = 'password'
     hostname1 = ''
     port_num1 = 0
     instance1 = ''
-    sql_for_client = ''
+    client_cmds = ''
     if db_type1 == access:
         db_path1 = (r'C:\Coding\PyCharm\projects\Python-Universal-DB-Client'
                     r'\databases\ds2.accdb')
@@ -79,22 +80,38 @@ if __name__ == '__main__':
         print('UNKNOWN DATABASE TYPE.')
         exit(1)
 
-    query = ('SELECT actor, title, price, categoryname\n'
-             'FROM PRODUCTS p INNER JOIN CATEGORIES c\n'
-             'ON p.category = c.category\n'
-             'WHERE actor = ')
+    # CONNECT TO DATABASE INSTANCE SPECIFIED ABOVE.
+    print('\nCONNECTING TO DATABASE...')
+    db_instance1 = DBInstance(db_type1, db_path1, username1, password1,
+                              hostname1, port_num1, instance1)
+    db_instance1.print_all_connection_parameters()
+    bind_vars1 = db_instance1.init_bind_vars()
+    paramstyle1 = db_instance1.get_paramstyle()
+
+    # TEXT OF COMMANDS TO RUN IN DATABASE CLIENT.
+    query = ("SELECT actor, title, price, categoryname\n"
+             "FROM PRODUCTS p INNER JOIN CATEGORIES c\n"
+             "ON p.category = c.category\n"
+             "WHERE actor = ")
+    # _bindvar_characterize(query)
+    bind_vars = dict()
+    bind_vars[1] = ['actor', 'CHEVY FOSTER', 'varchar(50)']
+    bind_vars[2] = ['price', 35.00, 'real']
+    num_params = query.count('{')
+    if num_params != query.count('}'):
+        print('The number of opening and closing braces are unequal!')
+        exit(1)
     if db_type1 == access:
-        sql_for_client = ''
+        client_cmds = ''
     elif db_type1 == mysql:
-        # TEXT OF COMMANDS TO RUN IN MYSQLSH.
-        # Explanation of commands:
-        # SET @x := 'y';          Create variable "x", give it the value "y"
-        z = "SET @actor := 'CHEVY FOSTER';\n"
-        param = '@actor;'
-        sql_for_client = z + query + param
+        # \option resultFormat=table      Use the "table" result format
+        # SET @x := 'y';                  Create variable "x", give it value "y"
+        pre_cmd = ("\option resultFormat=table"
+                   "SET @actor := 'CHEVY FOSTER';\n")
+        param = '@actor;\n'
+        post_cmd = '\\exit\n'
+        client_cmds = pre_cmd + query + param + post_cmd
     elif db_type1 == oracle:
-        # TEXT OF COMMANDS TO RUN IN SQLPLUS.
-        # Explanation of commands:
         # SET SQLPROMPT ""        Turn off prompt
         # SET SQLNUMBER OFF       Turn off numbers printed for multi-line input
         # SET TRIMOUT ON          Trim trailing spaces
@@ -110,83 +127,71 @@ if __name__ == '__main__':
         #    :x := 'y';
         # END;
         # /
-        z1 = ('SET SQLPROMPT ""\n'
-              'SET SQLNUMBER OFF\n'
-              'SET TRIMOUT ON\n'
-              'SET TAB OFF\n'
-              'SET NEWPAGE NONE\n'
-              'SET LINESIZE 256\n'
-              'SET WRAP OFF\n'
-              'SET COLSEP "{}"\n'
-              'VARIABLE actor VARCHAR2(50)\n'
-              'BEGIN\n'
-              "    :actor := 'CHEVY FOSTER';\n"
-              'END;\n'
-              '/\n')
-        param = ':actor;'
-        z2 = '\nexit\n'
-        sql_for_client = z1.format(my_colsep) + query + param + z2
+        pre_cmd = ('SET SQLPROMPT ""\n'
+                   'SET SQLNUMBER OFF\n'
+                   'SET TRIMOUT ON\n'
+                   'SET TAB OFF\n'
+                   'SET NEWPAGE NONE\n'
+                   'SET LINESIZE 256\n'
+                   'SET WRAP OFF\n'
+                   'SET COLSEP "{}"\n'
+                   'VARIABLE actor VARCHAR2(50)\n'
+                   'BEGIN\n'
+                   "    :actor := 'CHEVY FOSTER';\n"
+                   'END;\n'
+                   '/\n')
+        param = ':actor;\n'
+        post_cmd = 'exit\n'
+        client_cmds = pre_cmd.format(my_colsep) + query + param + post_cmd
     elif db_type1 == postgresql:
-        # TEXT OF COMMANDS TO RUN IN PSQL.
-        # Explanation of commands:
         # \pset footer off             Turn off query output footer (# rows)
-        z1 = ('\\pset footer off\n'
-              'PREPARE x9q7z (text) AS ')
-        param = "$1;"
-        z2 = "\nEXECUTE x9q7z ('CHEVY FOSTER');\n"
-        sql_for_client = z1 + query + param + z2
-        print(sql_for_client)
+        # \pset fieldsep |             Set column separator to | (pipe)
+        pre_cmd = ('\\pset footer off\n'
+                   '\\pset fieldsep {}\n'
+                   'PREPARE x9q7z (text) AS ')
+        param = '$1;\n'
+        post_cmd = ("EXECUTE x9q7z ('CHEVY FOSTER');\n"
+                    "exit\n")
+        client_cmds = pre_cmd.format(my_colsep) + query + param + post_cmd
+        print(client_cmds)
     elif db_type1 == sqlite:
-        # TEXT OF COMMANDS TO RUN IN SQLITE.
-        # Explanation of commands:
         # .echo off                      Set command echo off
         # .separator "|"                 Set column separator to pipe character
         # .headers on                    Put in column headings (column names)
         # .parameter set :x 3            Create variable "x", set it to 3
-        z1 = ('.echo off\n'
-              '.separator "{}"\n'
-              '.headers on\n'
-              ".parameter set :actor 'CHEVY FOSTER'\n")
-        param = ":actor;"
-        z2 = '\n.exit\n'
-        sql_for_client = z1.format(my_colsep) + query + param + z2
+        pre_cmd = ('.echo off\n'
+                   '.separator "{}"\n'
+                   '.headers on\n'
+                   ".parameter set :actor 'CHEVY FOSTER'\n")
+        param = ":actor;\n"
+        post_cmd = '.exit\n'
+        client_cmds = pre_cmd.format(my_colsep) + query + param + post_cmd
     elif db_type1 == sqlserver:
-        # TEXT OF COMMANDS TO RUN IN SQLCMD.
-        # Explanation of commands:
         # :Setvar SQLCMDCOLSEP |         Set column separator to pipe character
         # SET NOCOUNT ON                 Turn off "rows affected"
         # DECLARE @x AS VARCHAR(9);      Create a varchar(9) variable named "x"
         # SET @x = 'y';                  Set value of "x" to "y"
-        z1 = (':Setvar SQLCMDCOLSEP {}\n'
-              'SET NOCOUNT ON\n'
-              'DECLARE @actor AS VARCHAR(50);\n'
-              "SET @actor = 'CHEVY FOSTER';\n")
-        param = '@actor'
-        z2 = '\ngo\nexit\n'
-        sql_for_client = z1.format(my_colsep) + query + param + z2
+        pre_cmd = (":Setvar SQLCMDCOLSEP {}\n"
+                   "SET NOCOUNT ON\n"
+                   "DECLARE @actor AS VARCHAR(50);\n"
+                   "SET @actor = 'CHEVY FOSTER';\n")
+        param = '@actor\n'
+        post_cmd = ('go\n'
+                    'exit\n')
+        client_cmds = pre_cmd.format(my_colsep) + query + param + post_cmd
 
     # RUN ABOVE COMMANDS IN DATABASE CLIENT.
     db_client_exe = db_client_exes[db_type1].upper()
     print('\nRUNNING COMMANDS IN {}...'.format(db_client_exe))
-    sql_out = sql_cmdline(os, sql_for_client, db_type1, db_path1, username1,
-                          password1, hostname1, port_num1, instance1)
+    sql_out = db_instance1.sql_cmdline(os, client_cmds)
 
     # SHOW THE OUTPUT FROM RUNNING ABOVE COMMANDS IN DATABASE CLIENT.
-    # Don't use write_rows, probably the db client output not all columnar,
-    # it'll crash the database client.
+    # Don't use write_rows, output often not all columnar, will cause crash.
     if len(sql_out) > 0:
         print('\nTHE OUTPUT FROM RUNNING COMMANDS IN {}:'.format(db_client_exe))
         for line in sql_out:
             print(line)
         print('ALL DONE WITH {}.'.format(db_client_exe))
-
-    # CONNECT TO DATABASE INSTANCE SPECIFIED ABOVE.
-    print('\nCONNECTING TO DATABASE...')
-    db_instance1 = DBInstance(db_type1, db_path1, username1, password1,
-                              hostname1, port_num1, instance1)
-    db_instance1.print_all_connection_parameters()
-    bind_vars1 = db_instance1.init_bind_vars()
-    paramstyle1 = db_instance1.get_paramstyle()
 
     # CREATE DATABASE CLIENT OBJECT.
     print('\nGETTING DATABASE CLIENT OBJECT...')
@@ -202,7 +207,7 @@ if __name__ == '__main__':
     my_db_client.database_view_schema(colsep=my_colsep)
     print()
 
-    # Pass in text of SQL and a dict of bind variables and their values.
+    # Pass in text of SQL and bind variables.
     sql1 = ''
     if db_type1 == access:
         # MS Access does not support bind variables/parameterization.

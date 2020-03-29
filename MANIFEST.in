@@ -2,5 +2,3 @@ include README.rst
 include LICENSE.txt
 include requirements.txt
 include databases/*
-include test/expected_output.txt
-include test/test.sqlite3

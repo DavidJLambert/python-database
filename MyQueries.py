@@ -1,13 +1,12 @@
 """ MyQueries.py """
-
 from MyConstants import *
 
 not_implemented = "FINDING YOUR {} NOT IMPLEMENTED FOR {}."
 not_possible_sql = "SQL CANNOT READ THE SCHEMA IN {} THROUGH {}."
 
 tables = "TABLES"
-views = "VIEWS"
 tab_col = "TABLE COLUMNS"
+views = "VIEWS"
 view_col = "VIEW COLUMNS"
 indexes = "INDEXES"
 ind_col = "INDEX COLUMNS"

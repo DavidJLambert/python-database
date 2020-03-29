@@ -1,15 +1,14 @@
 """ setup.py
 
-SUMMARY:
-  Command-line universal database client.
+SUMMARY: Command-line universal database client.
 
 REPOSITORY: https://github.com/DavidJLambert/Python-Universal-DB-Client
 
 AUTHOR: David J. Lambert
 
-VERSION: 0.6.4
+VERSION: 0.6.5
 
-DATE: Mar 26, 2020
+DATE: Mar 28, 2020
 """
 
 from distutils.core import setup
