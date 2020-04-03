@@ -8,6 +8,7 @@ class DBInstance(object):
         about one database instance (referred to as "this database").
 
     Attributes:
+        os (str): the OS this is running on ('Windows', 'Linux', or 'Darwin').
         db_type (str): the type of database (Oracle, SQL Server, etc).
         db_path (str): the path of the database file, for SQLite and Access.
         username (str): a username for connecting to this database.
@@ -24,11 +25,19 @@ class DBInstance(object):
         callers (dict): collection of DBClient instances using this instance of
                         of DBInstance, along with their cursor objects.
     """
-    def __init__(self, db_type: str, db_path: str, username: str, password: str,
-                 hostname: str, port_num: int, instance: str) -> None:
+    def __init__(self,
+                 os: str,
+                 db_type: str,
+                 db_path: str,
+                 username: str,
+                 password: str,
+                 hostname: str,
+                 port_num: int,
+                 instance: str) -> None:
         """ Constructor method for this class.
 
         Parameters:
+            os (str): the OS on which this program is executing.
             db_type (str): the type of database (Oracle, SQL Server, etc).
             db_path (str): the path of the database file, for SQLite and Access.
             username (str): the username for the connection to this database.
@@ -39,6 +48,7 @@ class DBInstance(object):
         Returns:
         """
         # Save arguments of __init__.
+        self.os: str = os
         self.db_type: str = db_type
         self.db_path: str = db_path
         self.username: str = username
@@ -50,6 +60,7 @@ class DBInstance(object):
         # Check if db_type valid.
         if self.db_type not in db_types:
             print('Invalid database type "{}".'.format(self.db_type))
+            # Nothing to clean up.
             exit(1)
 
         # Import appropriate database library.
@@ -94,6 +105,7 @@ class DBInstance(object):
         except self.db_lib_obj.Error:
             print_stacktrace()
             print('Failed to connect to database.')
+            # Nothing to clean up.
             exit(1)
 
         # Get database software version.
@@ -136,6 +148,7 @@ class DBInstance(object):
         except self.db_lib_obj.Error:
             print_stacktrace()
             print(z.format('Failed to disconnect'))
+            # Nothing to clean up.
             exit(1)
         return
     # End of method close_connection.
@@ -157,7 +170,7 @@ class DBInstance(object):
         return cursor
     # End of method create_cursor.
 
-    def delete_cursor(self, caller):
+    def delete_cursor(self, caller) -> None:
         """ Method that deletes an existing cursor.
 
         Parameters:
@@ -223,7 +236,7 @@ class DBInstance(object):
         return self.bind_vars
     # End of method init_bind_vars.
 
-    def get_paramstyle(self):
+    def get_paramstyle(self) -> str:
         """ Method to return the parameter style.
 
         Parameters:
@@ -240,17 +253,14 @@ class DBInstance(object):
         Returns:
             db_software_version (str): database software version.
         """
-        sql = 'Nada'
-        if self.db_type in {mysql, postgresql}:
-            sql = 'SELECT version()'
-        elif self.db_type == oracle:
-            sql = "SELECT * FROM v$version WHERE banner LIKE 'Oracle%'"
-        elif self.db_type == sqlite:
-            sql = 'select sqlite_version()'
-        elif self.db_type == sqlserver:
-            sql = 'SELECT @@VERSION'
+        sql = {
+            mysql: 'SELECT version()',
+            postgresql: 'SELECT version()',
+            oracle: "SELECT * FROM v$version WHERE banner LIKE 'Oracle%'",
+            sqlite: 'SELECT sqlite_version()',
+            sqlserver: 'SELECT @@VERSION'}.get(self.db_type, 'Nada')
 
-        if sql != 'Nada':
+        if sql[0:6] == 'SELECT':
             cursor = self.connection.cursor()
             cursor.execute(sql)
             version = cursor.fetchone()[0]
@@ -259,13 +269,14 @@ class DBInstance(object):
         elif self.db_type == access:
             version = "unavailable for MS Access through SQL"
         elif self.db_lib_name != pyodbc:
+            # This is for future use.
             version = self.connection.version
         else:
             version = 'unknown'
         return str(version)
     # End of method get_db_software_version.
 
-    def get_db_connection_string(self):
+    def get_db_connection_string(self) -> str:
         """ Method to form database connection string.
 
         Parameters:
@@ -284,12 +295,13 @@ class DBInstance(object):
                 z = ('DRIVER={{Microsoft Access Driver (*.mdb, *.accdb)}};'
                      'DBQ={};')
             elif self.db_type == sqlserver:
-                z = ('DRIVER={{SQL Server}};UID={};PWD={};SERVER={};PORT={};'
-                     'DATABASE={}')
+                z = ('DRIVER={{SQL Server}};'
+                     'UID={};PWD={};SERVER={};PORT={};DATABASE={}')
         elif self.db_lib_name == sqlite3:
             z = '{}'
         else:
             print('Unknown db library "{}", aborting.'.format(self.db_lib_name))
+            self.close_connection()
             exit(1)
 
         if self.db_type in {oracle, postgresql, sqlserver}:
@@ -297,6 +309,9 @@ class DBInstance(object):
                          self.port_num, self.instance)
         elif self.db_type in file_databases:
             z = z.format(self.db_path)
+        elif self.db_type == mysql:
+            pass
+
         return z
     # End of method get_db_software_version.
 
@@ -320,31 +335,27 @@ class DBInstance(object):
         return
     # End of method print_all_connection_parameters.
 
-    def sql_cmdline(self, os: str, sql: str) -> list:
-        """ Run SQL against database using command line client.
+    def get_cmdline_list(self) -> list:
+        """ Get command line list for db command line client.
 
         Parameters:
-            os (str): 'Windows', 'Linux', or 'Darwin'
-            sql (str): text of the SQL to run.
         Returns:
-            sql_output (list): rows of output.
+            cmd (list): command line to use.
         """
-        from subprocess import Popen, PIPE
+        args = (self.username, self.password, self.hostname,
+                self.port_num, self.instance)
 
-        cmd = ''
-        args = (self.username, self.password, self.hostname, self.port_num,
-                self.instance)
         if self.db_type == access or self.db_client_exe == '':
             z = '{} DOES NOT HAVE A COMMAND LINE INTERFACE.'
-            print(z.format(self.db_type).upper())
-            return list()
-        elif not is_file_in_path(os, self.db_client_exe):
-            print('Did not find {} in PATH.'.format(self.db_client_exe))
-            return list()
+            z = z.format(self.db_type).upper()
+            cmd = ['Error', z]
+        elif not is_file_in_path(self.os, self.db_client_exe):
+            z = 'Did not find {} in PATH.'.format(self.db_client_exe)
+            cmd = ['Error', z]
         elif self.db_type == mysql:
             conn_str = '--uri={}:{}@{}:{}/{}'.format(*args)
-            cmd = [self.db_client_exe, conn_str, '--table', '--sql',
-                   '--quiet-start']
+            cmd = [self.db_client_exe, conn_str,
+                   '--table', '--sql', '--quiet-start']
         elif self.db_type == oracle:
             conn_str = '{}/{}@{}:{}/{}'.format(*args)
             cmd = [self.db_client_exe, conn_str]
@@ -358,20 +369,10 @@ class DBInstance(object):
             cmd = [self.db_client_exe, '-U', self.username, '-P', self.password,
                    '-S', host_port, '-d', self.instance, '-s', "|"]
         else:
-            print('Not yet implemented for {}.'.format(self.db_type))
-            return list()
-        p = Popen(cmd,  stdin=PIPE, stdout=PIPE, stderr=PIPE)
-        (stdout, stderr) = p.communicate(sql.encode('utf-8'))
-        stderr = stderr.decode('utf-8').split("\n")
-        # MySQL warning to ignore.
-        z = [('WARNING: Using a password on the command line interface can be '
-              'insecure.'), '']
-        if len(stderr) > 0 and stderr != [''] and stderr != z:
-            print("PROBLEM IN SQL_CMDLINE:")
-            print('cmd: ', cmd)
-            print('sql: ', sql)
-            print('stderr: ', stderr)
-        return stdout.decode('utf-8').split("\n")
-    # End of method sql_cmdline.
+            z = 'Not yet implemented for {}.'.format(self.db_type)
+            cmd = ['Error', z]
+
+        return cmd
+    # End of method get_cmdline_list.
 
 # End of Class DBInstance.

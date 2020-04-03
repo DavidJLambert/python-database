@@ -6,9 +6,9 @@ REPOSITORY: https://github.com/DavidJLambert/Python-Universal-DB-Client
 
 AUTHOR: David J. Lambert
 
-VERSION: 0.6.5
+VERSION: 0.7.0
 
-DATE: Mar 28, 2020
+DATE: Apr 2, 2020
 """
 
 from distutils.core import setup

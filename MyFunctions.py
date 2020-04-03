@@ -89,7 +89,7 @@ def is_file_in_path(os: str, filename: str) -> bool:
 
 def pick_one(choices: list, choice_type: str) -> int:
     """ Function to print message if skipping operation in
-        database_table_schema or database_view_schema.
+        db_table_schema or db_view_schema.
         Only used in DBClient.py.
 
     Parameters:
@@ -120,6 +120,7 @@ def pick_one(choices: list, choice_type: str) -> int:
             # Interpret the choice.
             if choice == "Q":
                 print('Quitting as requested.')
+                # Not cleaning up connections and cursors.
                 exit(0)
             choice = int(choice) - 1
             if choice in range(len(choices)):
@@ -128,5 +129,50 @@ def pick_one(choices: list, choice_type: str) -> int:
             else:
                 print('Invalid choice, please try again.')
         print('\nYou chose {} "{}":.'.format(choice_type, choice_name))
+
     return choice
 # End of function pick_one.
+
+
+def sql_cmdline(cmdline_list: list, sql: str) -> list:
+    """ Run SQL against database using command line client.
+
+    Parameters:
+        cmdline_list (list): the list of commands for Popen.
+        sql (str): text of the SQL to run.
+    Returns:
+        sql_output (list): rows of output.
+    """
+    if cmdline_list[0] == 'Error':
+        print(cmdline_list[1])
+        return list()
+
+    from subprocess import Popen, PIPE
+    p = Popen(cmdline_list,  stdin=PIPE, stdout=PIPE, stderr=PIPE)
+    (stdout, stderr) = p.communicate(sql.encode('utf-8'))
+    stderr = stderr.decode('utf-8').split("\n")
+    # MySQL warning to ignore.
+    z = [('WARNING: Using a password on the command line interface can be '
+          'insecure.'), '']
+    if len(stderr) > 0 and stderr != [''] and stderr != z:
+        print("PROBLEM IN SQL_CMDLINE:")
+        print('cmd: ', cmdline_list)
+        print('sql: ', sql)
+        print('stderr: ', stderr)
+
+    return stdout.decode('utf-8').split("\n")
+# End of function sql_cmdline.
+
+
+def quote_a_string(quote_me: str) -> str:
+    """ Enclose a string in single quotes, after escaping slashes and single
+        quotes.
+
+    Parameters:
+        quote_me (str): the string to quote.
+    Returns:
+        output (list): the string enclosed in single quotes.
+    """
+    quote_me = quote_me.replace("'", "''")
+    return "'" + quote_me + "'"
+# End of function quote_a_string.

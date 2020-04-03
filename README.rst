@@ -8,9 +8,9 @@ Universal Database Client
 
 :AUTHOR: David J. Lambert
 
-:VERSION: 0.6.5
+:VERSION: 0.7.0
 
-:DATE: Mar 28, 2020
+:DATE: Apr 2, 2020
 
 PURPOSE
 -------
@@ -51,9 +51,9 @@ Its externally useful methods are:
 1.  set_sql: gets the text of SQL to run.
 2.  set_bind_vars: gets the bind variables for sql.
 3.  run_sql: executes SQL, which was read with set_sql and set_bind_vars.
-4.  database_table_schema: lists all the tables owned by the current login,
+4.  db_table_schema: lists all the tables owned by the current login,
     all the columns in those tables, and all indexes on those tables.
-5.  database_view_schema: lists all the views owned by the current login, all
+5.  db_view_schema: lists all the views owned by the current login, all
     the columns in those views, and the SQL for the view.
 
 Class OutputWriter handles all query output to file or to standard output.

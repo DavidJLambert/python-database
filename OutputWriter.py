@@ -18,7 +18,9 @@ class OutputWriter(object):
             "|"
             ","
     """
-    def __init__(self, out_file_name: str = '', align_col: bool = True,
+    def __init__(self,
+                 out_file_name: str = '',
+                 align_col: bool = True,
                  col_sep: str = ',') -> None:
         """ Constructor method for this class.
 
@@ -44,6 +46,7 @@ class OutputWriter(object):
                 out_file = open(out_file_name, 'w')
             except OSError:
                 print_stacktrace()
+                # Can envision situations where exiting might be excessive.
                 exit(1)
 
         self.out_file_name: str = out_file_name
@@ -53,7 +56,7 @@ class OutputWriter(object):
         return
     # End of method __init__.
 
-    def close_output_file(self):
+    def close_output_file(self) -> None:
         """ Close output file, if it exists.
 
         Parameters:
@@ -64,7 +67,7 @@ class OutputWriter(object):
         return
     # End of method close_output_file.
 
-    def get_align_col(self):
+    def get_align_col(self) -> None:
         """ Prompt for align_col: chaice to align or not align columns.
 
         Parameters:
@@ -89,7 +92,7 @@ class OutputWriter(object):
         return
     # End of method get_align_col.
 
-    def get_col_sep(self):
+    def get_col_sep(self) -> None:
         """ Prompt for col_sep: character(s) to separate columns.
 
         Parameters:
@@ -101,7 +104,7 @@ class OutputWriter(object):
         return
     # End of method get_col_sep.
 
-    def get_out_file_name(self):
+    def get_out_file_name(self) -> None:
         """ Prompt for relative or absolute path to output file.
 
         Parameters:
