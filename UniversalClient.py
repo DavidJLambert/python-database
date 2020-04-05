@@ -1,13 +1,13 @@
-""" UniversalCLient_Simple.py
+""" UniversalClient.py
 
-SUMMARY: Command-line universal database client, version with manual
-         generation of SQL and Bind Variables.
+SUMMARY: Command-line universal database client, the version with manual
+         specification of SQL and Bind Variables.
 
 REPOSITORY: https://github.com/DavidJLambert/Python-Universal-DB-Client
 
 AUTHOR: David J. Lambert
 
-VERSION: 0.7.2
+VERSION: 0.7.3
 
 DATE: Apr 5, 2020
 

@@ -6,7 +6,7 @@ REPOSITORY: https://github.com/DavidJLambert/Python-Universal-DB-Client
 
 AUTHOR: David J. Lambert
 
-VERSION: 0.7.2
+VERSION: 0.7.3
 
 DATE: Apr 5, 2020
 """
@@ -23,8 +23,8 @@ setup(
     license='MIT License',
     long_description=long_description,
     long_description_content_type='text/x-rst',
-    name='UniversalClient_Complex',
-    py_modules=["UniversalClient_Complex"],
+    name='UniversalClient',
+    py_modules=["UniversalClient"],
     url='https://github.com/DavidJLambert/Python-Universal-DB-Client',
     version='0.2.7',
     install_requires=[

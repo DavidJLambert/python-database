@@ -1,4 +1,13 @@
-""" MyFunctions.py """
+""" MyFunctions.py
+
+REPOSITORY: https://github.com/DavidJLambert/Python-Universal-DB-Client
+
+AUTHOR: David J. Lambert
+
+VERSION: 0.7.3
+
+DATE: Apr 5, 2020
+"""
 import sys
 
 
@@ -33,7 +42,7 @@ def is_skip_operation(sql: str) -> bool:
 
 def os_python_version_info() -> (str, int, int):
     """ Method to print OS and Python version info.
-        Only used in UniversalClient_Complex.py.
+        Only used in UniversalClient*.py.
 
     Parameters:
     Returns:

@@ -1,4 +1,13 @@
-""" DBClient.py """
+""" DBClient.py
+
+REPOSITORY: https://github.com/DavidJLambert/Python-Universal-DB-Client
+
+AUTHOR: David J. Lambert
+
+VERSION: 0.7.3
+
+DATE: Apr 5, 2020
+"""
 from OutputWriter import *
 import MyQueries as mq
 from DBInstance import *
