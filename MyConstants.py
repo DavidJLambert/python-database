@@ -52,6 +52,7 @@ db_client_exes = {
 named = 'named'
 pyformat = 'pyformat'
 qmark = 'qmark'
+nobindvars = 'nobindvars'
 paramstyle_for_lib = {
     cx_Oracle: named,
     psycopg2: pyformat,

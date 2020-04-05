@@ -86,10 +86,14 @@ class DBInstance(object):
 
         # Get the parameter style we're using.
         self.paramstyle = paramstyle_for_lib[self.db_lib_name]
+        if self.db_type == access:
+            self.paramstyle = nobindvars
         if self.paramstyle in {named, pyformat}:
             self.bind_vars = dict()
         elif self.paramstyle == qmark:
             self.bind_vars = tuple()
+        else:
+            self.bind_vars = None
 
         # Connect to database instance.
         self.connection = None

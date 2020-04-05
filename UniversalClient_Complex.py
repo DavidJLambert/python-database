@@ -7,7 +7,7 @@ REPOSITORY: https://github.com/DavidJLambert/Python-Universal-DB-Client
 
 AUTHOR: David J. Lambert
 
-VERSION: 0.7.1
+VERSION: 0.7.2
 
 DATE: Apr 5, 2020
 
@@ -89,16 +89,6 @@ bind_var_fmt[named] = ':{}'
 bind_var_fmt[pyformat] = '%({})s'
 bind_var_fmt[qmark] = '?{}'
 
-# OPTION FOR SETTING COLUMN SEPARATOR
-
-col_sep_option = {
-    access: False,
-    mysql: False,
-    oracle: True,
-    postgresql: True,
-    sqlite: True,
-    sqlserver: True}
-
 # QUERY TERMINATION CHARACTERS AT COMMAND LINE
 
 terminator = {
@@ -124,7 +114,7 @@ if __name__ == '__main__':
     os, py_version_major, py_version_minor = os_python_version_info()
 
     # GET DATABASE CONNECTION INFO TO USE.
-    db_type1 = mysql
+    db_type1 = access
 
     if db_type1 not in db_types:
         print('UNKNOWN DATABASE TYPE.')
@@ -296,9 +286,10 @@ if __name__ == '__main__':
         # .separator "|"                 Set column separator to pipe character
         # .headers on                    Put in column headings (column names)
         # .parameter set :x 3            Create variable "x", set it to 3
-        pre_cmd = ('.echo off\n'
-                   '.separator "{}"\n'
-                   '.headers on\n')
+        pre_cmd = (
+            '.echo off\n'
+            '.separator "{}"\n'
+            '.headers on\n')
         set_value = ".parameter set {} {}\n"
         for key in range(num_bind_vars):
             my_value = bind_var_value_cmd[key]
@@ -311,8 +302,9 @@ if __name__ == '__main__':
         # SET NOCOUNT ON                 Turn off "rows affected"
         # DECLARE @x AS VARCHAR(9);      Create a varchar(9) variable named "x"
         # SET @x = 'y';                  Set value of "x" to "y"
-        pre_cmd = (":Setvar SQLCMDCOLSEP {}\n"
-                   "SET NOCOUNT ON\n")
+        pre_cmd = (
+            ":Setvar SQLCMDCOLSEP {}\n"
+            "SET NOCOUNT ON\n")
         set_value = (
             "DECLARE {name} AS {type};\n"
             "SET {name} = {value};\n")
@@ -321,15 +313,14 @@ if __name__ == '__main__':
                 name=bind_var_fmt[db_type1].format(bind_var_column[key]),
                 value=bind_var_value_cmd[key],
                 type=bind_var_data_type[key])
-        post_cmd = ('go\n'
-                    'exit\n')
+        post_cmd = (
+            'go\n'
+            'exit\n')
 
     # ASSEMBLE COMMAND PARTS INTO COMPLETE COMMAND.
-    if col_sep_option[db_type1]:
-        client_cmds = pre_cmd.format(my_colsep)
-    else:
-        client_cmds = pre_cmd
-    client_cmds += set_bind_vars + query1 + post_cmd
+    if pre_cmd.find('{}') > -1:
+        pre_cmd = pre_cmd.format(my_colsep)
+    client_cmds = pre_cmd + set_bind_vars + query1 + post_cmd
 
     # RUN ABOVE COMMANDS IN DATABASE COMMAND-LINE CLIENT.
     if db_client_exe != '':
@@ -396,6 +387,9 @@ if __name__ == '__main__':
     my_db_client.set_sql(query2)
     if len(bind_vars2) > 0:
         print('HERE ARE THE BIND VARIABLES:\n{}'.format(bind_vars2))
+        my_db_client.set_bind_vars(bind_vars2)
+    else:
+        print('NO BIND VARIABLES.\n')
         my_db_client.set_bind_vars(bind_vars2)
 
     # EXECUTE THE SQL & BIND VARIABLES THROUGH DB API 2.0 LIBRARY.
