@@ -1,14 +1,15 @@
-""" universalCLient.py
+""" UniversalCLient_Complex.py
 
-SUMMARY: Command-line universal database client.
+SUMMARY: Command-line universal database client, version with automated
+         generation of SQL and Bind Variables.
 
 REPOSITORY: https://github.com/DavidJLambert/Python-Universal-DB-Client
 
 AUTHOR: David J. Lambert
 
-VERSION: 0.7.0
+VERSION: 0.7.1
 
-DATE: Apr 2, 2020
+DATE: Apr 5, 2020
 
 For more information, see README.rst.
 """
@@ -35,13 +36,14 @@ sample_username = {
 
 sample_password = 'password'
 
+# VirtualBox Guests use NAT.
 sample_hostname = {
     access: '',
-    mysql: '192.168.1.71',
+    mysql: '127.0.0.1',
     oracle: 'DESKTOP-C54UGSE.attlocal.net',
-    postgresql: '192.168.1.67',
+    postgresql: '127.0.0.1',
     sqlite: '',
-    sqlserver: '192.168.1.64'}
+    sqlserver: '127.0.0.1'}
 
 sample_port_num = {
     access: 0,
@@ -73,21 +75,19 @@ sample_db_path[sqlite] = home + sample_db_path[sqlite]
 
 # BIND VARIABLE NAME FORMAT AT COMMAND LINE
 
-bind_var_fmt_cmd = {
-    access: '{}',
-    mysql: '@{}',
-    oracle: ':{}',
-    postgresql: '${}',
-    sqlite: ':{}',
-    sqlserver: '@{}'}
+bind_var_fmt = dict()
+bind_var_fmt[access] = '{}'
+bind_var_fmt[mysql] = '@{}'
+bind_var_fmt[oracle] = ':{}'
+bind_var_fmt[postgresql] = '${}'
+bind_var_fmt[sqlite] = ':{}'
+bind_var_fmt[sqlserver] = '@{}'
 
 # BIND VARIABLE NAME FORMAT USING PYTHON DB API 2.0 LIBRARY
 
-bind_var_fmt_lib = {
-    access: '{}',
-    named: ':{}',
-    pyformat: '%({})s',
-    qmark: '?{}'}
+bind_var_fmt[named] = ':{}'
+bind_var_fmt[pyformat] = '%({})s'
+bind_var_fmt[qmark] = '?{}'
 
 # OPTION FOR SETTING COLUMN SEPARATOR
 
@@ -113,8 +113,8 @@ terminator = {
 table = 'table'
 column = 'column'
 value = 'value'
-data_type_native = 'data_type_native'
-data_type_dbapi2 = 'data_type_dbapi2'
+data_type = 'data_type'
+data_type_group = 'data_type_group'
 
 # -------- MAIN PROGRAM
 
@@ -124,7 +124,7 @@ if __name__ == '__main__':
     os, py_version_major, py_version_minor = os_python_version_info()
 
     # GET DATABASE CONNECTION INFO TO USE.
-    db_type1 = access
+    db_type1 = mysql
 
     if db_type1 not in db_types:
         print('UNKNOWN DATABASE TYPE.')
@@ -175,45 +175,62 @@ if __name__ == '__main__':
     num_bind_vars -= 1
 
     # Info for constructing bind variables.
-    bind_var_data = dict()
-    bind_var_data[0] = {
-        table: 'PRODUCTS', column: 'actor', value: 'CHEVY FOSTER',
-        data_type_native: 'TBD', data_type_dbapi2: 'TBD'}
-    bind_var_data[1] = {
-        table: 'PRODUCTS', column: 'price', value: 35.00,
-        data_type_native: 'TBD', data_type_dbapi2: 'TBD'}
+    empty = [''] * num_bind_vars
+    bind_var_table = empty[:]
+    bind_var_column = empty[:]
+    bind_var_value = empty[:]
+    bind_var_data_type = empty[:]
+    bind_var_data_type_group = empty[:]
+
+    bind_var_table[0] = 'PRODUCTS'
+    bind_var_column[0] = 'actor'
+    bind_var_value[0] = 'CHEVY FOSTER'
+
+    bind_var_table[1] = 'PRODUCTS'
+    bind_var_column[1] = 'price'
+    bind_var_value[1] = 35.00
+
+    # Separate list for command line, because of string quoting.
+    bind_var_value_cmd = bind_var_value[:]
 
     # Get bind variable data types.
-    for key in range(num_bind_vars):
-        x, y = my_db_client.get_data_type(bind_var_data[key][table],
-                                          bind_var_data[key][column])
-        bind_var_data[key][data_type_native] = x
-        bind_var_data[key][data_type_dbapi2] = y
+    if mq.data_dict_sql[mq.tables, db_type1] == mq.not_possible_sql:
+        # No data dictionary to use, will have to manually construct query.
+        pass
+    else:
+        for key in range(num_bind_vars):
+            (bind_var_data_type[key],
+             bind_var_data_type_group[key]) = my_db_client.get_data_type(
+                bind_var_table[key], bind_var_column[key])
+            # Quote strings.
+            if bind_var_data_type_group[key] == 'STRING':
+                bind_var_value_cmd[key] = quote_a_string(bind_var_value[key])
 
-    bind_var = [''] * num_bind_vars
+    bind_var = empty[:]
     for key in range(num_bind_vars):
-        bind_var[key] = bind_var_fmt_cmd[db_type1].format(
-            bind_var_data[key][column])
+        if db_type1 == postgresql:
+            bind_var[key] = '$' + str(key + 1)
+        else:
+            bind_var[key] = bind_var_fmt[db_type1].format(bind_var_column[key])
+
     # ADAPT QUERY TO GIVEN DATABASE TYPE
     query1 = query.format(bind_var[0], bind_var[1],
                           terminator=terminator[db_type1])
     # CONSTRUCT COMMANDS AROUND QUERY TO RUN IN DATABASE COMMAND-LINE CLIENT.
-    client_cmds = ''
     pre_cmd = ''
     set_bind_vars = ''
     post_cmd = ''
-    if db_type1 == access:
-        pass
+    db_client_exe = db_client_exes[db_type1].upper()
+    if db_client_exe == '':
+        z = '{} DOES NOT HAVE A COMMAND LINE INTERFACE.'
+        print(z.format(db_type1).upper())
     elif db_type1 == mysql:
-        # \option resultFormat=table     Use the "table" result format
         # SET @x := 'y';                 Create variable "x", give it value "y"
-        pre_cmd = "\\option resultFormat=table"
-        template = "SET {} := {};\n"
-        set_bind_vars = ''
+        set_value = "SET {} := {};\n"
         for key in range(num_bind_vars):
-            set_bind_vars += template.format(bind_var_data[key][column],
-                                             bind_var_data[key][value])
-        post_cmd = '\\exit\n'
+            set_bind_vars += set_value.format(
+                bind_var_fmt[mysql].format(bind_var_column[key]),
+                bind_var_value_cmd[key])
     elif db_type1 == oracle:
         # SET SQLPROMPT ""        Turn off prompt
         # SET SQLNUMBER OFF       Turn off numbers printed for multi-line input
@@ -239,18 +256,26 @@ if __name__ == '__main__':
             'SET LINESIZE 256\n'
             'SET WRAP OFF\n'
             'SET COLSEP "{}"\n')
-        template = (
-            "VARIABLE {name} {type}\n"
-            "BEGIN\n"
-            "    {name} := {value};\n"
+        set_value = "VARIABLE {name} {type}\n"
+        for key in range(num_bind_vars):
+            ora_type = bind_var_data_type[key]
+            if bind_var_data_type[key][:7] == 'NUMBER(':
+                ora_type = 'NUMBER'
+            set_bind_vars += set_value.format(
+                name=bind_var_column[key],
+                type=ora_type)
+        set_bind_vars += "BEGIN\n"
+        set_value = "    {name} := {value};\n"
+        for key in range(num_bind_vars):
+            ora_type = bind_var_data_type[key]
+            if bind_var_data_type[key][:7] == 'NUMBER(':
+                ora_type = 'NUMBER'
+            set_bind_vars += set_value.format(
+                name=bind_var_fmt[oracle].format(bind_var_column[key]),
+                value=bind_var_value_cmd[key])
+        set_bind_vars += (
             "END;\n"
             "/\n")
-        set_bind_vars = ''
-        for key in range(num_bind_vars):
-            set_bind_vars += template.format(
-                name=bind_var_data[key][column],
-                value=bind_var_data[key][value],
-                type=bind_var_data[key][data_type_native])
         post_cmd = 'exit\n'
     elif db_type1 == postgresql:
         # \pset footer off             Turn off query output footer (# rows)
@@ -258,15 +283,14 @@ if __name__ == '__main__':
         pre_cmd = (
             "\\pset footer off\n"
             "\\pset fieldsep {}\n")
-        template = "PREPARE x9q7z ({}) AS "
-        types = [bind_var_data[key][data_type_native] for
-                 key in range(num_bind_vars)]
+        set_value = "PREPARE x9q7z ({}) AS "
+        types = [bind_var_data_type[key] for key in range(num_bind_vars)]
         types = ','.join(types)
-        set_bind_vars = template.format(types)
-        template = "EXECUTE x9q7z ({});\n"
-        values = [bind_var_data[key][value] for key in range(num_bind_vars)]
+        set_bind_vars = set_value.format(types)
+        set_value = "EXECUTE x9q7z ({});\n"
+        values = [str(bind_var_value_cmd[key]) for key in range(num_bind_vars)]
         values = ','.join(values)
-        post_cmd = template.format(values) + "\nexit\n"
+        post_cmd = set_value.format(values) + "\\quit\n"
     elif db_type1 == sqlite:
         # .echo off                      Set command echo off
         # .separator "|"                 Set column separator to pipe character
@@ -275,14 +299,11 @@ if __name__ == '__main__':
         pre_cmd = ('.echo off\n'
                    '.separator "{}"\n'
                    '.headers on\n')
-        template = ".parameter set {} {}\n"
-        set_bind_vars = ''
+        set_value = ".parameter set {} {}\n"
         for key in range(num_bind_vars):
-            my_value = bind_var_data[key][value]
-            if isinstance(my_value, str):
-                my_value = "'" + my_value + "'"
-            set_bind_vars += template.format(
-                bind_var_fmt_cmd[db_type1].format(bind_var_data[key][column]),
+            my_value = bind_var_value_cmd[key]
+            set_bind_vars += set_value.format(
+                bind_var_fmt[db_type1].format(bind_var_column[key]),
                 my_value)
         post_cmd = '.exit\n'
     elif db_type1 == sqlserver:
@@ -292,45 +313,46 @@ if __name__ == '__main__':
         # SET @x = 'y';                  Set value of "x" to "y"
         pre_cmd = (":Setvar SQLCMDCOLSEP {}\n"
                    "SET NOCOUNT ON\n")
-        template = (
+        set_value = (
             "DECLARE {name} AS {type};\n"
             "SET {name} = {value};\n")
-        set_bind_vars = ''
         for key in range(num_bind_vars):
-            set_bind_vars += template.format(
-                name=bind_var_data[key][column],
-                value=bind_var_data[key][value],
-                type=bind_var_data[key][data_type_native])
+            set_bind_vars += set_value.format(
+                name=bind_var_fmt[db_type1].format(bind_var_column[key]),
+                value=bind_var_value_cmd[key],
+                type=bind_var_data_type[key])
         post_cmd = ('go\n'
                     'exit\n')
 
     # ASSEMBLE COMMAND PARTS INTO COMPLETE COMMAND.
-    if col_sep_option:
+    if col_sep_option[db_type1]:
         client_cmds = pre_cmd.format(my_colsep)
     else:
         client_cmds = pre_cmd
     client_cmds += set_bind_vars + query1 + post_cmd
 
     # RUN ABOVE COMMANDS IN DATABASE COMMAND-LINE CLIENT.
-    db_client_exe = db_client_exes[db_type1].upper()
-    z = '\nRUNNING COMMANDS IN {} COMMAND-LINE CLIENT...'
-    print(z.format(db_client_exe))
-    cmdline_list = db_instance1.get_cmdline_list()
-    sql_out = sql_cmdline(cmdline_list, client_cmds)
+    if db_client_exe != '':
+        z = '\nRUNNING THESE COMMANDS IN {} COMMAND-LINE CLIENT:\n{}'
+        print(z.format(db_client_exe, client_cmds))
+        cmdline_list = db_instance1.get_cmdline_list()
+        sql_out = sql_cmdline(cmdline_list, client_cmds)
 
-    # SHOW OUTPUT FROM RUNNING ABOVE COMMANDS IN DATABASE COMMAND-LINE CLIENT.
-    # Don't use write_rows, output often not all columnar, will cause crash.
-    if len(sql_out) > 0:
-        z = '\nTHE OUTPUT FROM RUNNING COMMANDS IN {} COMMAND-LINE CLIENT:'
-        print(z.format(db_client_exe))
-        for line in sql_out:
-            print(line)
-    print('ALL DONE WITH {} COMMAND-LINE CLIENT.'.format(db_client_exe))
+        # SHOW OUTPUT FROM RUNNING ABOVE COMMANDS IN DB COMMAND-LINE CLIENT.
+        # Don't use write_rows, output often not all columnar, will cause crash.
+        if len(sql_out) > 0:
+            z = '\nTHE OUTPUT FROM RUNNING COMMANDS IN {} COMMAND-LINE CLIENT:'
+            print(z.format(db_client_exe))
+            for line in sql_out:
+                print(line)
+            print('ALL DONE WITH {} COMMAND-LINE CLIENT.'.format(db_client_exe))
 
     # DONE WITH COMMANDS IN DATABASE COMMAND-LINE CLIENT.
     # START CONSTRUCTING QUERY AND BIND VARIABLES TO RUN IN DB API 2.0 LIBRARY.
-    z = "\nLET'S RUN THE SAME SQL THROUGH A DB API 2.0 LIBRARY"
-    print(z.format(db_client_exe))
+    if db_client_exe != '':
+        print("\nLET'S RUN THE SAME SQL THROUGH A DB API 2.0 LIBRARY")
+    else:
+        print("\nLET'S RUN SOME SQL THROUGH A DB API 2.0 LIBRARY")
     bind_vars2 = db_instance1.init_bind_vars()
     paramstyle2 = db_instance1.get_paramstyle()
 
@@ -338,33 +360,30 @@ if __name__ == '__main__':
     query2 = ''
     if db_type1 == access:
         # MS Access does not support bind variables/parameterization.
-        for key in range(num_bind_vars):
-            if bind_var_data[key][data_type_dbapi2] in {'str', 'TEXT'}:
-                bind_var_data[key][value] = quote_a_string(
-                    bind_var_data[key][value])
-        query2 = query.format(bind_var_data[0][value],
-                              bind_var_data[1][value], terminator='')
+        # No data dictionary, so construct query manually.
+        query2 = query.format(quote_a_string(bind_var_value[0]),
+                              bind_var_value[1], terminator='')
         bind_vars2 = ''
     elif paramstyle2 == named:
         for key in range(num_bind_vars):
             # Bind variables kept in dictionary.
-            bind_vars2[bind_var_data[key][column]] = bind_var_data[key][value]
+            bind_vars2[bind_var_column[key]] = bind_var_value[key]
         query2 = query.format(
-            bind_var_fmt_lib[paramstyle2].format(bind_var_data[0][column]),
-            bind_var_fmt_lib[paramstyle2].format(bind_var_data[1][column]),
+            bind_var_fmt[paramstyle2].format(bind_var_column[0]),
+            bind_var_fmt[paramstyle2].format(bind_var_column[1]),
             terminator='')
     elif paramstyle2 == qmark:
         for key in range(num_bind_vars):
             # Bind variables kept in tuple.
-            bind_vars2 += (bind_var_data[key][value],)
+            bind_vars2 += (bind_var_value[key],)
         query2 = query.format('?', '?', terminator='')
     elif paramstyle2 == pyformat:
         for key in range(num_bind_vars):
             # Bind variables kept in dictionary.
-            bind_vars2[bind_var_data[key][column]] = bind_var_data[key][value]
+            bind_vars2[bind_var_column[key]] = bind_var_value[key]
         query2 = query.format(
-            bind_var_fmt_lib[paramstyle2].format(bind_var_data[0][column]),
-            bind_var_fmt_lib[paramstyle2].format(bind_var_data[1][column]),
+            bind_var_fmt[paramstyle2].format(bind_var_column[0]),
+            bind_var_fmt[paramstyle2].format(bind_var_column[1]),
             terminator='')
     else:
         z = 'DB type {}, with library {}, has an unknown parameter style.'
@@ -373,15 +392,15 @@ if __name__ == '__main__':
         exit(1)
 
     # SHOW THE SQL & BIND VARIABLES TO EXECUTE THROUGH DB API 2.0 LIBRARY.
-    print("\nHERE'S SOME SQL:\n{}".format(query2))
+    print("\nHERE'S THE SQL:\n{}".format(query2))
     my_db_client.set_sql(query2)
     if len(bind_vars2) > 0:
-        print('\nHERE ARE THE BIND VARIABLES:\n{}'.format(bind_vars2))
+        print('HERE ARE THE BIND VARIABLES:\n{}'.format(bind_vars2))
         my_db_client.set_bind_vars(bind_vars2)
 
     # EXECUTE THE SQL & BIND VARIABLES THROUGH DB API 2.0 LIBRARY.
     print('\nGETTING THE OUTPUT OF THAT SQL:')
-    col_names1, col_types1, rows1, row_count1 = my_db_client.run_sql()
+    col_names1, rows1, row_count1 = my_db_client.run_sql()
 
     # SET UP TO WRITE OUTPUT OF SQL EXECUTED THROUGH DB API 2.0 LIBRARY.
     print('\nPREPARING TO FORMAT THAT OUTPUT, AND PRINT OR WRITE IT TO FILE.')

@@ -33,7 +33,7 @@ def is_skip_operation(sql: str) -> bool:
 
 def os_python_version_info() -> (str, int, int):
     """ Method to print OS and Python version info.
-        Only used in universalClient.py.
+        Only used in UniversalClient_Complex.py.
 
     Parameters:
     Returns:
@@ -173,6 +173,6 @@ def quote_a_string(quote_me: str) -> str:
     Returns:
         output (list): the string enclosed in single quotes.
     """
-    quote_me = quote_me.replace("'", "''")
-    return "'" + quote_me + "'"
+    quote_me2 = quote_me.replace("'", "''")
+    return "'" + quote_me2 + "'"
 # End of function quote_a_string.

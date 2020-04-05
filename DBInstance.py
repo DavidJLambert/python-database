@@ -367,7 +367,7 @@ class DBInstance(object):
         elif self.db_type == sqlserver:
             host_port = '{},{}'.format(self.hostname, self.port_num)
             cmd = [self.db_client_exe, '-U', self.username, '-P', self.password,
-                   '-S', host_port, '-d', self.instance, '-s', "|"]
+                   '-S', host_port, '-d', self.instance]
         else:
             z = 'Not yet implemented for {}.'.format(self.db_type)
             cmd = ['Error', z]

@@ -151,7 +151,7 @@ data_dict_sql[tab_col, postgresql] = (
     "  column_default AS default_value,\n"
     "  '' AS comments\n"
     "FROM INFORMATION_SCHEMA.COLUMNS\n"
-    "WHERE table_name = '{}'\n"
+    "WHERE table_name = lower('{}')\n"
     "AND table_schema = 'public'")
 data_dict_sql[tab_col, sqlite] = (
     "SELECT cid AS column_id, name AS column_name, type AS data_type,\n"

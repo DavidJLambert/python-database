@@ -6,9 +6,9 @@ REPOSITORY: https://github.com/DavidJLambert/Python-Universal-DB-Client
 
 AUTHOR: David J. Lambert
 
-VERSION: 0.7.0
+VERSION: 0.7.1
 
-DATE: Apr 2, 2020
+DATE: Apr 5, 2020
 """
 
 from distutils.core import setup
@@ -23,8 +23,8 @@ setup(
     license='MIT License',
     long_description=long_description,
     long_description_content_type='text/x-rst',
-    name='universalClient',
-    py_modules=["universalClient"],
+    name='UniversalClient_Complex',
+    py_modules=["UniversalClient_Complex"],
     url='https://github.com/DavidJLambert/Python-Universal-DB-Client',
     version='0.2.7',
     install_requires=[

@@ -79,25 +79,21 @@ class DBClient(object):
         return
     # End of method set_bind_vars.
 
-    def run_sql(self) -> (list, list, list, int):
+    def run_sql(self) -> (list, list, int):
         """ Run the SQL, perhaps return rows and column names.
 
         Parameters:
         Returns:
             For SQL SELECT:
                 col_names: list of the names of the columns being fetched.
-                col_types: list of the data types of the columns being fetched.
-                    List of Nones for sqlite.
                 all_rows: list of tuples, each tuple is one row being fetched.
                 row_count: number of rows fetched.
             For other types of SQL:
                 list()
                 list()
-                list()
                 row_count: number of rows affected.
         """
         col_names = list()
-        col_types = list()
         all_rows = list()
         row_count = 0
         if not self.sql:
@@ -139,8 +135,8 @@ class DBClient(object):
                     # Get column names
                     col_names = [item[0] for item in self.cursor.description]
 
-                    # Get column data types.  None for sqlite.
-                    col_types = [item[1] for item in self.cursor.description]
+                    # Column data types.  Too specific and inconsistent to use.
+                    # col_types = [item[1] for item in self.cursor.description]
 
                     # Could combine all_rows & col_names into dict, with keys
                     # from col_names & values from all_rows, but performance
@@ -152,10 +148,10 @@ class DBClient(object):
             except self.db_library.Error:
                 print_stacktrace()
             finally:
-                return col_names, col_types, all_rows, row_count
+                return col_names, all_rows, row_count
     # End of method run_sql.
 
-    def _print_skip_op(self, sql_x: str, object_str: str) -> None:
+    def _skip_op_msg(self, sql_x: str, object_str: str) -> str:
         """ Method to print message if skipping operation in db_table_schema or
             db_view_schema.
 
@@ -164,13 +160,14 @@ class DBClient(object):
             object_str (str): type of object where we're skipping looking at in
                               data dictionary.
         Returns:
+            msg (str): complete message to print.
         """
         if sql_x == mq.not_implemented:
-            print('\n' + sql_x.format(object_str, self.db_type.upper()))
+            msg = '\n' + sql_x.format(object_str, self.db_type.upper())
         elif sql_x == mq.not_possible_sql:
-            print(sql_x.format(self.db_type.upper(), self.db_lib_name.upper()))
-        return
-    # End of method _print_skip_op.
+            msg = sql_x.format(self.db_type.upper(), self.db_lib_name.upper())
+        return msg
+    # End of method _skip_op_msg.
 
     # THE REST OF THE METHODS ALL HAVE TO DO WITH SEEING THE DATABASE SCHEMA.
 
@@ -184,8 +181,8 @@ class DBClient(object):
         Returns:
         """
         # Find tables.
-        skip_op, table_col_names, _, table_rows = self._data_dict_fetch(
-            mq.tables, '')
+        skip_op, table_col_names, table_rows = self._data_dict_fetch(mq.tables,
+                                                                     '')
         if skip_op:
             return
 
@@ -207,7 +204,7 @@ class DBClient(object):
         my_table_name = table_names[choice]
 
         # Find and print columns in this table.
-        skip_op, columns_col_names, _, columns_rows = self._data_dict_fetch(
+        skip_op, columns_col_names, columns_rows = self._data_dict_fetch(
             mq.tab_col, my_table_name)
 
         # Write output.
@@ -216,7 +213,7 @@ class DBClient(object):
         print()
 
         # Find all indexes in this table.
-        skip_op, indexes_col_names, _, indexes_rows = self._data_dict_fetch(
+        skip_op, indexes_col_names, indexes_rows = self._data_dict_fetch(
             mq.indexes, my_table_name)
         if skip_op:
             return
@@ -232,8 +229,8 @@ class DBClient(object):
         # Go through indexes, add index_columns to end of each index/row.
         for item_num, index_row in enumerate(indexes_rows):
             index_name = index_row[columns['index_name']]
-            skip_op, _, _, ind_col_rows =\
-                self._data_dict_fetch(mq.ind_col, index_name)
+            skip_op, _, ind_col_rows = self._data_dict_fetch(mq.ind_col,
+                                                             index_name)
             if skip_op:
                 return
             # Concatenate names of columns in index.
@@ -263,8 +260,9 @@ class DBClient(object):
         """
         # Find views
         # TODO need to use all fields and make return values consistent.
-        skip_op, view_col_names, _, view_rows = self._data_dict_fetch(mq.views,
-                                                                      '')
+        skip_op, view_col_names, view_rows = self._data_dict_fetch(mq.views, '')
+        if skip_op:
+            return
 
         # Create mapping from column name to item #, so I can access items by
         # column name instead of by item #.
@@ -290,8 +288,8 @@ class DBClient(object):
 
         # Find and print columns in this view.
         print('\nHere are the columns for view {}:'.format(my_view_name))
-        skip_op, columns_col_names, _, columns_rows =\
-            self._data_dict_fetch(mq.view_col, my_view_name)
+        skip_op, columns_col_names, columns_rows = self._data_dict_fetch(
+            mq.view_col, my_view_name)
 
         # Write output.
         writer1 = OutputWriter(out_file_name='', align_col=True, col_sep=colsep)
@@ -301,8 +299,8 @@ class DBClient(object):
         return
     # End of method db_view_schema.
 
-    def _data_dict_fetch(self, obj_type: str, obj_name: str)\
-            -> (bool, list, list):
+    def _data_dict_fetch(self, obj_type: str, obj_name: str) -> (bool, list,
+                                                                 list):
         """ Find data dictionary information about a type of object.
 
         Parameters:
@@ -313,24 +311,24 @@ class DBClient(object):
                 index for index columns).
         Returns:
             skip_op (bool): whether or this operation was skipped.
-            column_names (list): the names of the columns in "rows".
+            column_names (list): the names of the columns in "rows"
             rows (list): list of tuples, a tuple has info about 1 object
         """
-        # The SQL to find the columns for this index.
+        # The SQL to find the columns for this object.
         sql = mq.data_dict_sql[obj_type, self.db_type]
 
         if is_skip_operation(sql):
-            self._print_skip_op(sql, obj_type)
-            return True, list(), list(), list()
+            print(self._skip_op_msg(sql, obj_type))
+            return True, list(), list()
         else:
             if sql.find('{}') > -1:
                 sql = sql.replace('{}', obj_name)
 
             # Execute the SQL.
             self.set_sql(sql)
-            column_names, column_types, rows, row_count = self.run_sql()
+            column_names, rows, row_count = self.run_sql()
             # Return the information about this object.
-            return False, column_names, column_types, rows
+            return False, column_names, rows
     # End of method _data_dict_fetch.
 
     def get_data_type(self, table: str, column: str) -> (str, str):
@@ -340,34 +338,69 @@ class DBClient(object):
             table (str): the table to which the column belongs.
             column (str): the column we want the data type of.
         Returns:
-            data_type_native (str): the data type of table_name.column_name, as
+            data_type (str): the data type of table_name.column_name, as
                 described in the database's data dictionary.
-            data_type_dbapi2 (str): the data type of table_name.column_name, as
-                described in DB API 2.0 language.
+            data_type_group (str): the data type's group.
         """
         # Get the columns for this table.
-        skip_op, columns_col_names, _, columns_rows = self._data_dict_fetch(
+        skip_op, columns_col_names, columns_rows = self._data_dict_fetch(
             mq.tab_col, table)
+        if skip_op:
+            return 'NOT FOUND', 'NOT FOUND'
 
         # Create mapping from column name to item #.
         columns = {name.lower(): item_num for
                    item_num, name in enumerate(columns_col_names)}
-        data_type_native = 'NOT FOUND'
+        data_type = 'NOT FOUND'
         for columns_row in columns_rows:
             if columns_row[columns['column_name']].upper() == column.upper():
-                data_type_native = columns_row[columns['data_type']]
+                data_type = columns_row[columns['data_type']]
                 break
 
-        sql = 'SELECT max({}) FROM {}'
-        sql = sql.format(column, table)
-        self.set_sql(sql)
-        column_names, column_types, rows, row_count = self.run_sql()
-        if self.db_type == sqlite:
-            data_type_dbapi2 = data_type_native
+        data_type_low = data_type.lower()
+        # Now find data type group.
+        if data_type == 'NOT FOUND':
+            data_type_group = data_type
+        elif ((data_type_low.find('nchar') > -1) or
+              (data_type_low.find('nvarchar') > -1) or
+              (data_type_low.find('nclob') > -1)):
+            data_type_group = 'UNICODE'
+        elif ((data_type_low.find('bit') > -1 and self.db_type != sqlserver) or
+              (data_type_low.find('raw') > -1) or
+              (data_type_low.find('image') > -1) or
+              (data_type_low.find('binary') > -1) or
+              (data_type_low.find('blob') > -1) or
+              (data_type_low.find('byte') > -1 and self.db_type != oracle)):
+            # Includes Oracle Long Raw, listed before Long.
+            # Image is Sql server
+            data_type_group = 'BINARY'
+        elif ((data_type_low.find('char') > -1) or
+              (data_type_low.find('text') > -1) or
+              (data_type_low.find('long') > -1) or
+              (data_type_low.find('clob') > -1)):
+            data_type_group = 'STRING'
+        elif ((data_type_low.find('int') > -1) or
+              (data_type_low.find('number') > -1) or
+              (data_type_low.find('numeric') > -1) or
+              (data_type_low.find('decimal') > -1) or
+              (data_type_low.find('real') > -1) or
+              (data_type_low.find('float') > -1) or
+              (data_type_low.find('double') > -1) or
+              (data_type_low.find('money') > -1) or
+              (data_type_low.find('currency') > -1)):
+            data_type_group = 'NUMBER'
+        elif ((data_type_low.find('date') > -1) or
+              (data_type_low.find('time') > -1) or
+              (data_type_low.find('interval') > -1) or
+              (data_type_low.find('year') > -1)):
+            data_type_group = 'DATETIME'
+        elif ((data_type_low.find('bool') > -1) or
+              (data_type_low.find('bit') > -1 and self.db_type == sqlserver)):
+            data_type_group = 'BOOLEAN'
         else:
-            data_type_dbapi2 = column_types[0].__name__
+            data_type_group = 'OTHER'
 
-        return data_type_native, data_type_dbapi2
+        return data_type, data_type_group
     # End of method get_data_type.
 
 # End of Class DBClient.
