@@ -4,15 +4,16 @@ REPOSITORY: https://github.com/DavidJLambert/Python-Universal-DB-Client
 
 AUTHOR: David J. Lambert
 
-VERSION: 0.7.3
+VERSION: 0.7.4
 
-DATE: Apr 5, 2020
+DATE: Apr 19, 2020
 """
 from OutputWriter import *
 import MyQueries as mq
 from DBInstance import *
 
 
+# noinspection PyUnresolvedReferences
 class DBClient(object):
     """ Get text of a SQL program with bind variables, then execute it.
 
@@ -175,6 +176,10 @@ class DBClient(object):
             msg = '\n' + sql_x.format(object_str, self.db_type.upper())
         elif sql_x == mq.not_possible_sql:
             msg = sql_x.format(self.db_type.upper(), self.db_lib_name.upper())
+        else:
+            msg = "Problem in _skip_op_msg!"
+            print(msg)
+            exit(1)
         return msg
     # End of method _skip_op_msg.
 
@@ -342,6 +347,7 @@ class DBClient(object):
 
     def get_data_type(self, table: str, column: str) -> (str, str):
         """ Find the data type of table.column.
+            Only used in UniversalClient_Complex.py.
 
         Parameters:
             table (str): the table to which the column belongs.

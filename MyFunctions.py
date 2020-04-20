@@ -4,9 +4,9 @@ REPOSITORY: https://github.com/DavidJLambert/Python-Universal-DB-Client
 
 AUTHOR: David J. Lambert
 
-VERSION: 0.7.3
+VERSION: 0.7.4
 
-DATE: Apr 5, 2020
+DATE: Apr 19, 2020
 """
 import sys
 
@@ -79,6 +79,7 @@ def is_file_in_path(os: str, filename: str) -> bool:
         found (bool): whether or not the file was found in PATH.
     """
     from os import pathsep, environ, scandir
+    from os.path import exists
 
     filename = filename.lower()
     if os == 'Windows':
@@ -87,11 +88,13 @@ def is_file_in_path(os: str, filename: str) -> bool:
     found = False
     for folder in environ['PATH'].split(pathsep):
         if folder not in {'', '.'}:
-            for f in scandir(folder):
-                if f.is_file():
-                    if f.name.lower() == filename:
-                        found = True
-                        break
+            # Ignore invalid folders in PATH.
+            if exists(folder):
+                for f in scandir(folder):
+                    if f.is_file():
+                        if f.name.lower() == filename:
+                            found = True
+                            break
     return found
 # End of function is_file_in_path.
 
@@ -137,7 +140,7 @@ def pick_one(choices: list, choice_type: str) -> int:
                 break
             else:
                 print('Invalid choice, please try again.')
-        print('\nYou chose {} "{}":.'.format(choice_type, choice_name))
+        print('\nYou chose {} "{}":'.format(choice_type, choice_name))
 
     return choice
 # End of function pick_one.

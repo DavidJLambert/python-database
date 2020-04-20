@@ -7,9 +7,9 @@ REPOSITORY: https://github.com/DavidJLambert/Python-Universal-DB-Client
 
 AUTHOR: David J. Lambert
 
-VERSION: 0.7.3
+VERSION: 0.7.4
 
-DATE: Apr 5, 2020
+DATE: Apr 19, 2020
 
 For more information, see README.rst.
 """
@@ -37,13 +37,7 @@ sample_username = {
 sample_password = 'password'
 
 # VirtualBox Guests use NAT.
-sample_hostname = {
-    access: '',
-    mysql: '127.0.0.1',
-    oracle: 'DESKTOP-C54UGSE.attlocal.net',
-    postgresql: '127.0.0.1',
-    sqlite: '',
-    sqlserver: '127.0.0.1'}
+sample_hostname = '127.0.0.1'
 
 sample_port_num = {
     access: 0,
@@ -81,7 +75,7 @@ if __name__ == '__main__':
     os, py_version_major, py_version_minor = os_python_version_info()
 
     # GET DATABASE CONNECTION INFO TO USE.
-    db_type1 = oracle
+    db_type1 = postgresql
 
     if db_type1 not in db_types:
         print('UNKNOWN DATABASE TYPE.')
@@ -89,7 +83,7 @@ if __name__ == '__main__':
     db_path1 = sample_db_path[db_type1]
     username1 = sample_username[db_type1]
     password1 = sample_password
-    hostname1 = sample_hostname[db_type1]
+    hostname1 = sample_hostname
     port_num1 = sample_port_num[db_type1]
     instance1 = sample_instance[db_type1]
 

@@ -4,14 +4,15 @@ REPOSITORY: https://github.com/DavidJLambert/Python-Universal-DB-Client
 
 AUTHOR: David J. Lambert
 
-VERSION: 0.7.3
+VERSION: 0.7.4
 
-DATE: Apr 5, 2020
+DATE: Apr 19, 2020
 """
 from MyConstants import *
 from MyFunctions import *
 
 
+# noinspection PyUnresolvedReferences
 class DBInstance(object):
     """ Class containing database connection utilities and information
         about one database instance (referred to as "this database").
@@ -97,6 +98,8 @@ class DBInstance(object):
         self.paramstyle = paramstyle_for_lib[self.db_lib_name]
         if self.db_type == access:
             self.paramstyle = nobindvars
+
+        # Initialize bind_vars.
         if self.paramstyle in {named, pyformat}:
             self.bind_vars = dict()
         elif self.paramstyle == qmark:

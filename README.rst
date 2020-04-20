@@ -8,9 +8,9 @@ Universal Database Client
 
 :AUTHOR: David J. Lambert
 
-:VERSION: 0.7.3
+:VERSION: 0.7.4
 
-:DATE: Apr 5, 2020
+:DATE: Apr 19, 2020
 
 PURPOSE
 -------
