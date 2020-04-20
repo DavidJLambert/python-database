@@ -2,5 +2,5 @@ urls.txt
 
 Project:           https://github.com/DavidJLambert/Python-Universal-DB-Client
 MySQL Sample:      https://1drv.ms/u/s!AieKzIY33GmRgc1zW_xlX5Eeyqztug?e=YYeaTg
-PostgreSQL Sample: https://1drv.ms/u/s!AieKzIY33GmRgc1y9wIMdrIU8uHrFg?e=Rz51l0
+PostgreSQL Sample: https://1drv.ms/u/s!AieKzIY33GmRgeAGzgQcIm-6gBO7CQ?e=hv7mnS
 MSSQL Sample:      https://1drv.ms/u/s!AieKzIY33GmRgd9GYSfUxOHbOlpoyw?e=wpozlv

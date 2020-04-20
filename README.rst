@@ -8,9 +8,9 @@ Universal Database Client
 
 :AUTHOR: David J. Lambert
 
-:VERSION: 0.7.4
+:VERSION: 0.7.5
 
-:DATE: Apr 19, 2020
+:DATE: Apr 20, 2020
 
 PURPOSE
 -------
@@ -133,7 +133,7 @@ PostgreSQL on Debian.
 - MySQL:
   https://1drv.ms/u/s!AieKzIY33GmRgc1zW_xlX5Eeyqztug?e=YYeaTg
 - PostgreSQL:
-  https://1drv.ms/u/s!AieKzIY33GmRgc1y9wIMdrIU8uHrFg?e=Rz51l0
+  https://1drv.ms/u/s!AieKzIY33GmRgeAGzgQcIm-6gBO7CQ?e=hv7mnS
 
 The sample databases all have the same data: the small version of the Dell DVD
 Store database, version 2.1, available at http://linux.dell.com/dvdstore.
@@ -155,27 +155,27 @@ The MySQL sample database:
 - Available at https://1drv.ms/u/s!AieKzIY33GmRgc1zW_xlX5Eeyqztug?e=YYeaTg.
 - MySQL 5.5.60 on an Oracle VirtualBox virtual machine running Debian 8.11
   Jessie.  I've installed LXDE desktop 0.99.0-1 on it.
-- This virtual machine is based on a virtual machine created by Turnkey
-  Linux (Turnkey GNU/Linux version 14.2), which is available at
+- This virtual machine is based on a virtual machine created by Turnkey Linux
+  (Turnkey GNU/Linux version 14.2), available at
   https://www.turnkeylinux.org/mysql.
 
 The Microsoft SQL Server sample database:
 
 - Available at https://1drv.ms/u/s!AieKzIY33GmRgd9GYSfUxOHbOlpoyw?e=wpozlv.
 - Microsoft SQL Server 2017 Express Edition on an Oracle VirtualBox virtual
-  machine running Ubuntu 16.04.3 server.  No desktop environment, command line
-  only.
+  machine running Ubuntu 16.04.3 server, with desktop, command line only.
 - This virtual machine was installed from a Ubuntu 16.04.3 server iso image
   downloaded from https://www.ubuntu.com/download/server.
 
 The PostgreSQL sample database:
 
-- Available at https://1drv.ms/u/s!AieKzIY33GmRgc1y9wIMdrIU8uHrFg?e=Rz51l0.
-- PostgreSQL 9.4.19 on an Oracle VirtualBox virtual machine running Debian 8.11
-  Jessie.  I've installed LXDE desktop 0.99.0-1 on it.
-- This virtual machine is based on a virtual machine created by Turnkey Linux
-  (Turnkey GNU/Linux version 14.2), which is available at
-  https://www.turnkeylinux.org/mysql.
+- Available at https://1drv.ms/u/s!AieKzIY33GmRgeAGzgQcIm-6gBO7CQ?e=hv7mnS.
+- PostgreSQL 12.2.0-1 on an Oracle VirtualBox virtual machine running Debian
+  9.12 Stretch, with LXDE desktop.
+- This virtual machine is based on a virtual machine created by Bitnami, which
+  was downloaded from https://bitnami.com/stack/postgresql/virtual-machine.
+  Documentation for that virtual machine can be found at
+  https://docs.bitnami.com/virtual-machine/infrastructure/postgresql.
 
 The Microsoft Access 2016 sample database:
 
