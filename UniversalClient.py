@@ -50,7 +50,7 @@ sample_port_num = {
 sample_instance = {
     access: '',
     mysql: 'DS2',
-    oracle: 'XE',
+    oracle: 'ORCL',
     postgresql: 'ds2',
     sqlite: '',
     sqlserver: 'DS2'}
@@ -75,7 +75,7 @@ if __name__ == '__main__':
     os, py_version_major, py_version_minor = os_python_version_info()
 
     # GET DATABASE CONNECTION INFO TO USE.
-    db_type1 = postgresql
+    db_type1 = oracle
 
     if db_type1 not in db_types:
         print('UNKNOWN DATABASE TYPE.')
