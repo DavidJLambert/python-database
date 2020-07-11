@@ -4,50 +4,51 @@ REPOSITORY: https://github.com/DavidJLambert/Python-Universal-DB-Client
 
 AUTHOR: David J. Lambert
 
-VERSION: 0.7.5
+VERSION: 0.7.6
 
-DATE: Apr 20, 2020
+DATE: Jul 9, 2020
 """
-from MyConstants import *
+from constants import ACCESS, MYSQL, ORACLE, POSTGRESQL, SQLITE, SQLSERVER
 
-not_implemented = "FINDING YOUR {} NOT IMPLEMENTED FOR {}."
-not_possible_sql = "SQL CANNOT READ THE SCHEMA IN {} THROUGH {}."
 
-tables = "TABLES"
-tab_col = "TABLE COLUMNS"
-views = "VIEWS"
-view_col = "VIEW COLUMNS"
-indexes = "INDEXES"
-ind_col = "INDEX COLUMNS"
+NOT_IMPLEMENTED = "FINDING YOUR {} NOT IMPLEMENTED FOR {}."
+NOT_POSSIBLE_SQL = "SQL CANNOT READ THE SCHEMA IN {} THROUGH {}."
+
+TABLES = "TABLES"
+TAB_COL = "TABLE COLUMNS"
+VIEWS = "VIEWS"
+VIEW_COL = "VIEW COLUMNS"
+INDEXES = "INDEXES"
+IND_COL = "INDEX COLUMNS"
 
 data_dict_sql = dict()
 
 # QUERIES FOR FINDING TABLES.
 
-data_dict_sql[tables, access] = not_possible_sql
-data_dict_sql[tables, mysql] = (
+data_dict_sql[TABLES, ACCESS] = NOT_POSSIBLE_SQL
+data_dict_sql[TABLES, MYSQL] = (
     "SELECT table_name\n"
     "FROM information_schema.tables\n"
     "WHERE table_type = 'BASE TABLE'\n"
     "AND table_schema = database()\n"
     "ORDER BY table_name;")
-data_dict_sql[tables, oracle] = (
+data_dict_sql[TABLES, ORACLE] = (
     "SELECT table_name\n"
     "FROM user_tables\n"
     "ORDER BY table_name")
-data_dict_sql[tables, postgresql] = (
+data_dict_sql[TABLES, POSTGRESQL] = (
     "SELECT table_name\n"
     "FROM information_schema.tables\n"
     "WHERE table_type = 'BASE TABLE'\n"
     "AND table_schema = 'public'\n"
     "ORDER BY table_name;")
-data_dict_sql[tables, sqlite] = (
+data_dict_sql[TABLES, SQLITE] = (
     "SELECT name AS table_name\n"
     "FROM sqlite_master\n"
     "WHERE type='table'\n"
     "AND name NOT LIKE 'sqlite_%'\n"
     "ORDER BY name")
-data_dict_sql[tables, sqlserver] = (
+data_dict_sql[TABLES, SQLSERVER] = (
     "SELECT name AS table_name\n"
     "FROM sys.tables\n"
     "WHERE type='U'\n"
@@ -56,34 +57,34 @@ data_dict_sql[tables, sqlserver] = (
 # QUERIES FOR FINDING VIEWS.
 
 # TODO need to use all fields and make return values consistent.
-data_dict_sql[views, access] = not_possible_sql
-data_dict_sql[views, mysql] = (
+data_dict_sql[VIEWS, ACCESS] = NOT_POSSIBLE_SQL
+data_dict_sql[VIEWS, MYSQL] = (
     "SELECT table_name AS view_name, view_definition AS view_sql,\n"
     "  check_option, is_updatable, 'No' AS is_insertable,\n"
     "  'No' AS is_deletable\n"
     "FROM information_schema.views\n"
     "WHERE table_schema = database()\n"
     "ORDER BY table_name;")
-data_dict_sql[views, oracle] = (
+data_dict_sql[VIEWS, ORACLE] = (
     "SELECT view_name, text AS view_sql\n"
     "FROM user_views\n"
     "ORDER BY view_name")
-data_dict_sql[views, postgresql] = (
+data_dict_sql[VIEWS, POSTGRESQL] = (
     "SELECT table_name AS view_name, view_definition AS view_sql,\n"
     "  check_option, is_updatable, is_insertable_into AS is_insertable,\n"
     "  'No' AS is_deletable,\n"
     "  is_trigger_insertable_into, is_trigger_updatable, is_trigger_deletable\n"
-    "FROM information_schema.views\n"
+    "FROM information_schema.VIEWS\n"
     "WHERE table_schema = 'public'\n"
     "ORDER BY table_name;")
-data_dict_sql[views, sqlite] = (
+data_dict_sql[VIEWS, SQLITE] = (
     "SELECT name AS view_name, sql AS view_sql,\n"
     "  'No' AS check_option, 'No' AS is_updatable, 'No' AS is_insertable,\n"
     "  'No' AS is_deletable\n"
     "FROM sqlite_master\n"
     "WHERE type='view'\n"
     "ORDER BY name")
-data_dict_sql[views, sqlserver] = (
+data_dict_sql[VIEWS, SQLSERVER] = (
     "SELECT name AS view_name, object_definition(object_id(name)) AS "
     "  view_sql,\n"
     "  'No' AS check_option, 'No' AS is_updatable, 'No' AS is_insertable,\n"
@@ -93,15 +94,15 @@ data_dict_sql[views, sqlserver] = (
 
 # QUERIES FOR FINDING TABLE COLUMNS.
 
-data_dict_sql[tab_col, access] = not_possible_sql
-data_dict_sql[tab_col, mysql] = (
+data_dict_sql[TAB_COL, ACCESS] = NOT_POSSIBLE_SQL
+data_dict_sql[TAB_COL, MYSQL] = (
     "SELECT ordinal_position AS column_id, column_name,\n"
     "  column_type AS data_type, is_nullable as nullable,\n"
     "  column_default AS default_value, column_comment AS comments\n"
     "FROM INFORMATION_SCHEMA.COLUMNS\n"
     "WHERE table_name = '{}'\n"
     "AND table_schema = database()")
-data_dict_sql[tab_col, oracle] = (
+data_dict_sql[TAB_COL, ORACLE] = (
     "SELECT column_id, c.column_name,\n"
     "  CASE\n"
     "    WHEN (data_type LIKE '%CHAR%' OR data_type IN ('RAW','UROWID'))\n"
@@ -131,7 +132,7 @@ data_dict_sql[tab_col, oracle] = (
     "AND c.table_name = com.table_name\n"
     "AND c.column_name = com.column_name\n"
     "ORDER BY column_id")
-data_dict_sql[tab_col, postgresql] = (
+data_dict_sql[TAB_COL, POSTGRESQL] = (
     "SELECT ordinal_position AS column_id, column_name,\n"
     "  CASE \n"
     "    WHEN data_type = 'character varying'\n"
@@ -162,7 +163,7 @@ data_dict_sql[tab_col, postgresql] = (
     "FROM INFORMATION_SCHEMA.COLUMNS\n"
     "WHERE table_name = lower('{}')\n"
     "AND table_schema = 'public'")
-data_dict_sql[tab_col, sqlite] = (
+data_dict_sql[TAB_COL, SQLITE] = (
     "SELECT cid AS column_id, name AS column_name, type AS data_type,\n"
     "  CASE\n"
     "    WHEN \"notnull\" = 1\n"
@@ -173,8 +174,8 @@ data_dict_sql[tab_col, sqlite] = (
     "  '' AS comments\n"
     "FROM pragma_table_info('{}')\n"
     "ORDER BY column_id")
-# Used for both data_dict_sql[tab_col, sqlserver]
-#   and data_dict_sql[view_col, sqlserver].
+# Used for both data_dict_sql[TAB_COL, SQLSERVER]
+#   and data_dict_sql[view_col, SQLSERVER].
 tab_col_sqlserver = (
     "SELECT c.column_id, c.name AS column_name,\n"
     "  CASE\n"
@@ -211,24 +212,24 @@ tab_col_sqlserver = (
     "WHERE o.type = '{}'\n"
     "AND o.name = '{}'\n"
     "ORDER BY c.column_id ")
-data_dict_sql[tab_col, sqlserver] = tab_col_sqlserver.format('U', '{}')
+data_dict_sql[TAB_COL, SQLSERVER] = tab_col_sqlserver.format('U', '{}')
 
 # QUERIES FOR FINDING VIEW COLUMNS.
 
-data_dict_sql[view_col, access] = not_possible_sql
+data_dict_sql[VIEW_COL, ACCESS] = NOT_POSSIBLE_SQL
 # TODO CHECK THIS
-data_dict_sql[view_col, mysql] = data_dict_sql[tab_col, mysql]
-data_dict_sql[view_col, oracle] = data_dict_sql[tab_col, oracle]
+data_dict_sql[VIEW_COL, MYSQL] = data_dict_sql[TAB_COL, MYSQL]
+data_dict_sql[VIEW_COL, ORACLE] = data_dict_sql[TAB_COL, ORACLE]
 # TODO CHECK THIS
-data_dict_sql[view_col, postgresql] = data_dict_sql[tab_col, postgresql]
-data_dict_sql[view_col, sqlite] = data_dict_sql[tab_col, sqlite]
-data_dict_sql[view_col, sqlserver] = tab_col_sqlserver.format('V', '{}')
+data_dict_sql[VIEW_COL, POSTGRESQL] = data_dict_sql[TAB_COL, POSTGRESQL]
+data_dict_sql[VIEW_COL, SQLITE] = data_dict_sql[TAB_COL, SQLITE]
+data_dict_sql[VIEW_COL, SQLSERVER] = tab_col_sqlserver.format('V', '{}')
 
 # QUERIES FOR FINDING INDEXES.
 
-data_dict_sql[indexes, access] = not_possible_sql
-data_dict_sql[indexes, mysql] = not_implemented
-data_dict_sql[indexes, oracle] = (
+data_dict_sql[INDEXES, ACCESS] = NOT_POSSIBLE_SQL
+data_dict_sql[INDEXES, MYSQL] = NOT_IMPLEMENTED
+data_dict_sql[INDEXES, ORACLE] = (
     "SELECT index_name, index_type, table_type,\n"
     "  CASE\n"
     "    WHEN uniqueness = 'UNIQUE'\n"
@@ -237,8 +238,8 @@ data_dict_sql[indexes, oracle] = (
     "  END AS \"unique\"\n"
     "FROM user_indexes WHERE table_name = '{}'\n"
     "ORDER BY index_name")
-data_dict_sql[indexes, postgresql] = not_implemented
-data_dict_sql[indexes, sqlite] = (
+data_dict_sql[INDEXES, POSTGRESQL] = NOT_IMPLEMENTED
+data_dict_sql[INDEXES, SQLITE] = (
     "SELECT name AS index_name, '' AS index_type, '' AS table_type,\n"
     "  CASE\n"
     "    WHEN \"unique\" = 1\n"
@@ -251,13 +252,13 @@ data_dict_sql[indexes, sqlite] = (
     "    ELSE 'No'\n"
     "    END AS partial\n"
     "FROM pragma_index_list('{}')")
-data_dict_sql[indexes, sqlserver] = not_implemented
+data_dict_sql[INDEXES, SQLSERVER] = NOT_IMPLEMENTED
 
 # QUERIES FOR FINDING INDEX COLUMNS.
 
-data_dict_sql[ind_col, access] = not_possible_sql
-data_dict_sql[ind_col, mysql] = not_implemented
-data_dict_sql[ind_col, oracle] = (
+data_dict_sql[IND_COL, ACCESS] = NOT_POSSIBLE_SQL
+data_dict_sql[IND_COL, MYSQL] = NOT_IMPLEMENTED
+data_dict_sql[IND_COL, ORACLE] = (
     "SELECT ic.column_position, column_name, descend,\n"
     "  column_expression FROM user_ind_columns ic\n"
     "LEFT OUTER JOIN user_ind_expressions ie\n"
@@ -265,8 +266,8 @@ data_dict_sql[ind_col, oracle] = (
     "AND ic.index_name = ie.index_name\n"
     "WHERE ic.index_name = '{}'\n"
     "ORDER BY ic.column_position")
-data_dict_sql[ind_col, postgresql] = not_implemented
-data_dict_sql[ind_col, sqlite] = (
+data_dict_sql[IND_COL, POSTGRESQL] = NOT_IMPLEMENTED
+data_dict_sql[IND_COL, SQLITE] = (
     "SELECT seqno AS column_position, name AS column_name,\n"
     "  CASE\n"
     "    WHEN desc = 1\n"
@@ -276,4 +277,4 @@ data_dict_sql[ind_col, sqlite] = (
     "  '' AS column_expression\n"
     "FROM pragma_index_xinfo('{}')\n"
     "WHERE key = 1")
-data_dict_sql[ind_col, sqlserver] = not_implemented
+data_dict_sql[IND_COL, SQLSERVER] = NOT_IMPLEMENTED

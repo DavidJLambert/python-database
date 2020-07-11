@@ -1,4 +1,5 @@
 import sqlite3
+
 # Constants
 db_path = "C:\\Coding\\PyCharm\\projects\\Python-Universal-DB-Client\\databases\\ds2.sqlite3"
 sql = "SELECT * FROM categories"

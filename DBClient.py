@@ -4,16 +4,16 @@ REPOSITORY: https://github.com/DavidJLambert/Python-Universal-DB-Client
 
 AUTHOR: David J. Lambert
 
-VERSION: 0.7.5
+VERSION: 0.7.6
 
-DATE: Apr 20, 2020
+DATE: Jul 9, 2020
 """
-from OutputWriter import *
+from constants import ACCESS, ORACLE, SQLSERVER  # MYSQL, POSTGRESQL, SQLITE
+from OutputWriter import OutputWriter
 import MyQueries as mq
-from DBInstance import *
+from functions import print_stacktrace, pick_one, is_skip_operation
 
 
-# noinspection PyUnresolvedReferences
 class DBClient(object):
     """ Get text of a SQL program with bind variables, then execute it.
 
@@ -114,7 +114,7 @@ class DBClient(object):
             try:
                 # Execute SQL.
                 if len(self.bind_vars) > 0:
-                    if self.db_type == access:
+                    if self.db_type == ACCESS:
                         print('NO BIND VARIABLES ALLOWED IN MICROSOFT ACCESS.')
                         self.clean_up()
                         exit(1)
@@ -172,9 +172,9 @@ class DBClient(object):
         Returns:
             msg (str): complete message to print.
         """
-        if sql_x == mq.not_implemented:
+        if sql_x == mq.NOT_IMPLEMENTED:
             msg = '\n' + sql_x.format(object_str, self.db_type.upper())
-        elif sql_x == mq.not_possible_sql:
+        elif sql_x == mq.NOT_POSSIBLE_SQL:
             msg = sql_x.format(self.db_type.upper(), self.db_lib_name.upper())
         else:
             msg = "Problem in _skip_op_msg!"
@@ -195,8 +195,7 @@ class DBClient(object):
         Returns:
         """
         # Find tables.
-        skip_op, table_col_names, table_rows = self._data_dict_fetch(mq.tables,
-                                                                     '')
+        skip_op, table_col_names, table_rows = self._data_dict_fetch(mq.TABLES, '')
         if skip_op:
             return
 
@@ -219,7 +218,7 @@ class DBClient(object):
 
         # Find and print columns in this table.
         skip_op, columns_col_names, columns_rows = self._data_dict_fetch(
-            mq.tab_col, my_table_name)
+            mq.TAB_COL, my_table_name)
 
         # Write output.
         writer1 = OutputWriter(out_file_name='', align_col=True, col_sep=colsep)
@@ -228,7 +227,7 @@ class DBClient(object):
 
         # Find all indexes in this table.
         skip_op, indexes_col_names, indexes_rows = self._data_dict_fetch(
-            mq.indexes, my_table_name)
+            mq.INDEXES, my_table_name)
         if skip_op:
             return
 
@@ -243,8 +242,7 @@ class DBClient(object):
         # Go through indexes, add index_columns to end of each index/row.
         for item_num, index_row in enumerate(indexes_rows):
             index_name = index_row[columns['index_name']]
-            skip_op, _, ind_col_rows = self._data_dict_fetch(mq.ind_col,
-                                                             index_name)
+            skip_op, _, ind_col_rows = self._data_dict_fetch(mq.IND_COL, index_name)
             if skip_op:
                 return
             # Concatenate names of columns in index.
@@ -274,7 +272,7 @@ class DBClient(object):
         """
         # Find views
         # TODO need to use all fields and make return values consistent.
-        skip_op, view_col_names, view_rows = self._data_dict_fetch(mq.views, '')
+        skip_op, view_col_names, view_rows = self._data_dict_fetch(mq.VIEWS, '')
         if skip_op:
             return
 
@@ -303,7 +301,7 @@ class DBClient(object):
         # Find and print columns in this view.
         print('\nHere are the columns for view {}:'.format(my_view_name))
         skip_op, columns_col_names, columns_rows = self._data_dict_fetch(
-            mq.view_col, my_view_name)
+            mq.VIEW_COL, my_view_name)
 
         # Write output.
         writer1 = OutputWriter(out_file_name='', align_col=True, col_sep=colsep)
@@ -313,8 +311,7 @@ class DBClient(object):
         return
     # End of method db_view_schema.
 
-    def _data_dict_fetch(self, obj_type: str, obj_name: str) -> (bool, list,
-                                                                 list):
+    def _data_dict_fetch(self, obj_type: str, obj_name: str) -> (bool, list, list):
         """ Find data dictionary information about a type of object.
 
         Parameters:
@@ -358,8 +355,7 @@ class DBClient(object):
             data_type_group (str): the data type's group.
         """
         # Get the columns for this table.
-        skip_op, columns_col_names, columns_rows = self._data_dict_fetch(
-            mq.tab_col, table)
+        skip_op, columns_col_names, columns_rows = self._data_dict_fetch(mq.TAB_COL, table)
         if skip_op:
             return 'NOT FOUND', 'NOT FOUND'
 
@@ -380,12 +376,12 @@ class DBClient(object):
               (data_type_low.find('nvarchar') > -1) or
               (data_type_low.find('nclob') > -1)):
             data_type_group = 'UNICODE'
-        elif ((data_type_low.find('bit') > -1 and self.db_type != sqlserver) or
+        elif ((data_type_low.find('bit') > -1 and self.db_type != SQLSERVER) or
               (data_type_low.find('raw') > -1) or
               (data_type_low.find('image') > -1) or
               (data_type_low.find('binary') > -1) or
               (data_type_low.find('blob') > -1) or
-              (data_type_low.find('byte') > -1 and self.db_type != oracle)):
+              (data_type_low.find('byte') > -1 and self.db_type != ORACLE)):
             # Includes Oracle Long Raw, listed before Long.
             # Image is Sql server
             data_type_group = 'BINARY'
@@ -410,7 +406,7 @@ class DBClient(object):
               (data_type_low.find('year') > -1)):
             data_type_group = 'DATETIME'
         elif ((data_type_low.find('bool') > -1) or
-              (data_type_low.find('bit') > -1 and self.db_type == sqlserver)):
+              (data_type_low.find('bit') > -1 and self.db_type == SQLSERVER)):
             data_type_group = 'BOOLEAN'
         else:
             data_type_group = 'OTHER'

@@ -1,0 +1,70 @@
+""" constants.py
+
+REPOSITORY: https://github.com/DavidJLambert/Python-Universal-DB-Client
+
+AUTHOR: David J. Lambert
+
+VERSION: 0.7.6
+
+DATE: Jul 9, 2020
+"""
+
+# SUPPORTED DATABASE TYPES.
+
+ACCESS = 'access'
+MYSQL = 'mysql'
+ORACLE = 'oracle'
+POSTGRESQL = 'postgresql'
+SQLITE = 'sqlite'
+SQLSERVER = 'sql server'
+DB_TYPES = [
+    ACCESS,
+    MYSQL,
+    ORACLE,
+    POSTGRESQL,
+    SQLITE,
+    SQLSERVER]
+
+# GROUPINGS OF DATABASE TYPES.
+
+USES_CONNECTION_STRING = set(DB_TYPES) - {MYSQL}
+FILE_DATABASES = {
+    ACCESS,
+    SQLITE}
+
+# DATABASE LIBRARIES.
+
+CX_ORACLE = 'cx_Oracle'
+PSYCOPG2 = 'psycopg2'
+PYMYSQL = 'pymysql'
+PYODBC = 'pyodbc'
+SQLITE3 = 'sqlite3'
+LIB_NAME_FOR_DB = {
+    ACCESS: PYODBC,
+    MYSQL: PYMYSQL,
+    ORACLE: CX_ORACLE,
+    POSTGRESQL: PSYCOPG2,
+    SQLITE: SQLITE3,
+    SQLSERVER: PYODBC}
+
+# DATABASE CLIENT EXECUTABLES.  THEIR DIRECTORIES MUST BE IN PATH.
+
+DB_CLIENT_EXES = {
+    ACCESS: '',
+    MYSQL: 'mysqlsh',
+    ORACLE: 'sqlplus',
+    POSTGRESQL: 'psql',
+    SQLITE: 'sqlite3',
+    SQLSERVER: 'sqlcmd'}
+
+# PARAMETERIZATION/BIND VARIABLE FORMAT USED HERE.
+NAMED = 'named'
+PYFORMAT = 'pyformat'
+QMARK = 'qmark'
+NOBINDVARS = 'nobindvars'
+PARAMSTYLE_FOR_LIB = {
+    CX_ORACLE: NAMED,
+    PSYCOPG2: PYFORMAT,
+    PYMYSQL: PYFORMAT,
+    PYODBC: QMARK,
+    SQLITE3: NAMED}

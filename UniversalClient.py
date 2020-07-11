@@ -7,9 +7,9 @@ REPOSITORY: https://github.com/DavidJLambert/Python-Universal-DB-Client
 
 AUTHOR: David J. Lambert
 
-VERSION: 0.7.5
+VERSION: 0.7.6
 
-DATE: Apr 20, 2020
+DATE: Jul 9, 2020
 
 For more information, see README.rst.
 """
@@ -21,18 +21,24 @@ For more information, see README.rst.
 #     ^------- DBInstance   <-- MyFunctions <-- sys
 #                   ^-----------MyConstants
 
-from DBClient import *
+from DBClient import DBClient
+from OutputWriter import OutputWriter
+from DBInstance import DBInstance
+from functions import os_python_version_info, sql_cmdline
+from constants import ACCESS, MYSQL, ORACLE, POSTGRESQL, SQLITE, SQLSERVER
+import constants as c
+
 
 # -------- CONSTANTS
 
 # INFORMATION ABOUT SAMPLE DATABASES.
 sample_username = {
-    access: '',
-    mysql: 'root',
-    oracle: 'ds2',
-    postgresql: 'root',
-    sqlite: '',
-    sqlserver: 'sa'}
+    ACCESS: '',
+    MYSQL: 'root',
+    ORACLE: 'ds2',
+    POSTGRESQL: 'root',
+    SQLITE: '',
+    SQLSERVER: 'sa'}
 
 sample_password = 'password'
 
@@ -40,44 +46,44 @@ sample_password = 'password'
 sample_hostname = '127.0.0.1'
 
 sample_port_num = {
-    access: 0,
-    mysql: 3306,
-    oracle: 1521,
-    postgresql: 5432,
-    sqlite: 0,
-    sqlserver: 1433}
+    ACCESS: 0,
+    MYSQL: 3306,
+    ORACLE: 1521,
+    POSTGRESQL: 5432,
+    SQLITE: 0,
+    SQLSERVER: 1433}
 
 sample_instance = {
-    access: '',
-    mysql: 'DS2',
-    oracle: 'ORCL',
-    postgresql: 'ds2',
-    sqlite: '',
-    sqlserver: 'DS2'}
+    ACCESS: '',
+    MYSQL: 'DS2',
+    ORACLE: 'ORCL',
+    POSTGRESQL: 'ds2',
+    SQLITE: '',
+    SQLSERVER: 'DS2'}
 
 home = 'C:\\Coding\\PyCharm\\projects\\Python-Universal-DB-Client\\'
 sample_db_path = {
-    access: r'databases\ds2.accdb',
-    mysql: '',
-    oracle: '',
-    postgresql: '',
-    sqlite: 'databases/ds2.sqlite3',
-    sqlserver: ''}
-sample_db_path[access] = home + sample_db_path[access]
+    ACCESS: r'databases\ds2.accdb',
+    MYSQL: '',
+    ORACLE: '',
+    POSTGRESQL: '',
+    SQLITE: 'databases/ds2.sqlite3',
+    SQLSERVER: ''}
+sample_db_path[ACCESS] = home + sample_db_path[ACCESS]
 home = home.replace('\\', '/')
-sample_db_path[sqlite] = home + sample_db_path[sqlite]
+sample_db_path[SQLITE] = home + sample_db_path[SQLITE]
 
 # -------- MAIN PROGRAM
 
-if __name__ == '__main__':
 
+def main():
     # OS AND PYTHON VERSION STUFF
     os, py_version_major, py_version_minor = os_python_version_info()
 
     # GET DATABASE CONNECTION INFO TO USE.
-    db_type1 = oracle
+    db_type1 = ACCESS
 
-    if db_type1 not in db_types:
+    if db_type1 not in c.DB_TYPES:
         print('UNKNOWN DATABASE TYPE.')
         exit(1)
     db_path1 = sample_db_path[db_type1]
@@ -121,16 +127,16 @@ if __name__ == '__main__':
     pre_cmd = ''
     query1 = ''
     post_cmd = ''
-    db_client_exe = db_client_exes[db_type1].upper()
+    db_client_exe = c.DB_CLIENT_EXES[db_type1].upper()
     if db_client_exe == '':
         z = '{} DOES NOT HAVE A COMMAND LINE INTERFACE.'
         print(z.format(db_type1).upper())
-    elif db_type1 == mysql:
+    elif db_type1 == MYSQL:
         pre_cmd = (
             "SET @actor := 'CHEVY FOSTER';\n"
             "SET @price := 35.0;\n")
         query1 = query.format('@actor', '@price', terminator=';')
-    elif db_type1 == oracle:
+    elif db_type1 == ORACLE:
         pre_cmd = (
             'SET SQLPROMPT ""\n'
             'SET SQLNUMBER OFF\n'
@@ -149,7 +155,7 @@ if __name__ == '__main__':
             '/\n')
         query1 = query.format(':actor', ':price', terminator=';')
         post_cmd = 'exit\n'
-    elif db_type1 == postgresql:
+    elif db_type1 == POSTGRESQL:
         pre_cmd = (
             "\\pset footer off\n"
             "\\pset fieldsep {}\n"
@@ -158,7 +164,7 @@ if __name__ == '__main__':
         post_cmd = (
             "EXECUTE x9q7z ('CHEVY FOSTER',35.0);\n"
             "\\quit\n")
-    elif db_type1 == sqlite:
+    elif db_type1 == SQLITE:
         # .echo off                      Set command echo off
         # .separator "|"                 Set column separator to pipe character
         # .headers on                    Put in column headings (column names)
@@ -171,7 +177,7 @@ if __name__ == '__main__':
             ".parameter set :price 35.0\n")
         query1 = query.format(':actor', ':price', terminator=';')
         post_cmd = '.exit\n'
-    elif db_type1 == sqlserver:
+    elif db_type1 == SQLSERVER:
         pre_cmd = (
             ":Setvar SQLCMDCOLSEP {}\n"
             "SET NOCOUNT ON\n"
@@ -215,18 +221,18 @@ if __name__ == '__main__':
     # SQL & BIND VARIABLES TO EXECUTE THROUGH DB API 2.0 LIBRARY.
     query2 = ''
     bind_vars2 = ''
-    if paramstyle2 == nobindvars:
+    if paramstyle2 == c.NOBINDVARS:
         # MS Access does not support bind variables/parameterization.
         query2 = query.format("'CHEVY FOSTER'", "35.0", terminator='')
-    elif paramstyle2 == named:
+    elif paramstyle2 == c.NAMED:
         # oracle/cx_Oracle and sqlite/sqlite3.
         query2 = query.format(':actor', ':price', terminator='')
         bind_vars2 = {'actor': 'CHEVY FOSTER', 'price': 35.0}
-    elif paramstyle2 == pyformat:
+    elif paramstyle2 == c.PYFORMAT:
         # mysql/pymysql and postgresql/psycopg2.
         query2 = query.format("%(actor)s", "%(price)s", terminator='')
         bind_vars2 = {'actor': 'CHEVY FOSTER', 'price': 35.0}
-    elif paramstyle2 == qmark:
+    elif paramstyle2 == c.QMARK:
         # sqlserver/pyodbc.
         query2 = query.format('?', '?', terminator='')
         bind_vars2 = ('CHEVY FOSTER', 35.0)
@@ -261,9 +267,11 @@ if __name__ == '__main__':
     del writer
     my_db_client.clean_up()
     del my_db_client
-    col_names1 = None
-    rows1 = None
     print()
     db_instance1.close_connection(del_cursors=True)
     print(db_instance1.get_connection_status())
     del instance1
+
+
+if __name__ == '__main__':
+    main()

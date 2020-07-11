@@ -1,14 +1,21 @@
-""" MyFunctions.py
+""" functions.py
 
 REPOSITORY: https://github.com/DavidJLambert/Python-Universal-DB-Client
 
 AUTHOR: David J. Lambert
 
-VERSION: 0.7.5
+VERSION: 0.7.6
 
-DATE: Apr 20, 2020
+DATE: Jul 9, 2020
 """
 import sys
+from traceback import print_exception
+from MyQueries import NOT_IMPLEMENTED, NOT_POSSIBLE_SQL
+from platform import uname, python_implementation
+from struct import calcsize
+from os import pathsep, environ, scandir
+from os.path import exists
+from subprocess import Popen, PIPE
 
 
 def print_stacktrace() -> None:
@@ -18,7 +25,6 @@ def print_stacktrace() -> None:
     Parameters:
     Returns:
     """
-    from traceback import print_exception
     print()
     print_exception(*sys.exc_info(), limit=None, file=sys.stdout)
     return
@@ -34,8 +40,7 @@ def is_skip_operation(sql: str) -> bool:
     Returns:
         skip (bool): skip this operation and operations dependent on it.
     """
-    from MyQueries import not_implemented, not_possible_sql
-    skip = (sql in {not_implemented, not_possible_sql})
+    skip = (sql in {NOT_IMPLEMENTED, NOT_POSSIBLE_SQL})
     return skip
 # End of function is_skip_operation.
 
@@ -50,9 +55,6 @@ def os_python_version_info() -> (str, int, int):
         Python major version (int): 2 or 3
         Python minor version (int)
     """
-    from platform import uname, python_implementation
-    from struct import calcsize
-
     q = ('OS: {}\nHost Name: {}\nOS Major Version: {}\nOS Full Version: {}'
          '\nProcessor Type: {}\nProcessor: {}')
     u = uname()
@@ -78,9 +80,6 @@ def is_file_in_path(os: str, filename: str) -> bool:
     Returns:
         found (bool): whether or not the file was found in PATH.
     """
-    from os import pathsep, environ, scandir
-    from os.path import exists
-
     filename = filename.lower()
     if os == 'Windows':
         filename += '.exe'
@@ -159,7 +158,6 @@ def sql_cmdline(cmdline_list: list, sql: str) -> list:
         print(cmdline_list[1])
         return list()
 
-    from subprocess import Popen, PIPE
     p = Popen(cmdline_list,  stdin=PIPE, stdout=PIPE, stderr=PIPE)
     (stdout, stderr) = p.communicate(sql.encode('utf-8'))
     stderr = stderr.decode('utf-8').split("\n")

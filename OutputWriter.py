@@ -4,11 +4,13 @@ REPOSITORY: https://github.com/DavidJLambert/Python-Universal-DB-Client
 
 AUTHOR: David J. Lambert
 
-VERSION: 0.7.5
+VERSION: 0.7.6
 
-DATE: Apr 20, 2020
+DATE: Jul 9, 2020
 """
-from MyFunctions import *
+import sys
+from functions import print_stacktrace
+from os.path import dirname, isdir
 
 
 class OutputWriter(object):
@@ -119,7 +121,6 @@ class OutputWriter(object):
         Parameters:
         Returns:
         """
-        from os.path import dirname, isdir
         prompt = ('\nEnter the name and relative or absolute'
                   '\nlocation of the file to write output to.'
                   '\nOr hit Return to print to the standard output:\n')

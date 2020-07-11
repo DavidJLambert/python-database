@@ -4,15 +4,15 @@ REPOSITORY: https://github.com/DavidJLambert/Python-Universal-DB-Client
 
 AUTHOR: David J. Lambert
 
-VERSION: 0.7.5
+VERSION: 0.7.6
 
-DATE: Apr 20, 2020
+DATE: Jul 9, 2020
 """
-from MyConstants import *
-from MyFunctions import *
+from functions import print_stacktrace, is_file_in_path
+from constants import ACCESS, MYSQL, ORACLE, POSTGRESQL, SQLITE, SQLSERVER
+import constants as c
 
 
-# noinspection PyUnresolvedReferences
 class DBInstance(object):
     """ Class containing database connection utilities and information
         about one database instance (referred to as "this database").
@@ -68,20 +68,20 @@ class DBInstance(object):
         self.instance: str = instance
 
         # Check if db_type valid.
-        if self.db_type not in db_types:
+        if self.db_type not in c.DB_TYPES:
             print('Invalid database type "{}".'.format(self.db_type))
             # Nothing to clean up.
             exit(1)
 
         # Import appropriate database library.
-        self.db_lib_name = lib_name_for_db[self.db_type]
+        self.db_lib_name = c.LIB_NAME_FOR_DB[self.db_type]
         self.db_lib_obj = __import__(self.db_lib_name)
 
         # Appropriate database client executable.
-        self.db_client_exe = db_client_exes[self.db_type]
+        self.db_client_exe = c.DB_CLIENT_EXES[self.db_type]
 
         # Get database library version.
-        if self.db_lib_name in {psycopg2, pymysql}:
+        if self.db_lib_name in {c.PSYCOPG2, c.PYMYSQL}:
             self.db_lib_version = self.db_lib_obj.__version__
         else:
             self.db_lib_version = self.db_lib_obj.version
@@ -95,14 +95,14 @@ class DBInstance(object):
         # paramstyle = 'pyformat': pymysql and psycopg2.
 
         # Get the parameter style we're using.
-        self.paramstyle = paramstyle_for_lib[self.db_lib_name]
-        if self.db_type == access:
-            self.paramstyle = nobindvars
+        self.paramstyle = c.PARAMSTYLE_FOR_LIB[self.db_lib_name]
+        if self.db_type == ACCESS:
+            self.paramstyle = c.NOBINDVARS
 
         # Initialize bind_vars.
-        if self.paramstyle in {named, pyformat}:
+        if self.paramstyle in {c.NAMED, c.PYFORMAT}:
             self.bind_vars = dict()
-        elif self.paramstyle == qmark:
+        elif self.paramstyle == c.QMARK:
             self.bind_vars = tuple()
         else:
             self.bind_vars = None
@@ -110,7 +110,7 @@ class DBInstance(object):
         # Connect to database instance.
         self.connection = None
         try:
-            if db_type in uses_connection_string:
+            if db_type in c.USES_CONNECTION_STRING:
                 z = self.get_db_connection_string()
                 self.connection = self.db_lib_obj.connect(z)
             else:
@@ -151,7 +151,7 @@ class DBInstance(object):
         else:
             print('Dependent DBClients exist, will not close connection.')
 
-        if self.db_type in file_databases:
+        if self.db_type in c.FILE_DATABASES:
             z = '\n{} from database at "{}".'
             z = z.format('{}', self.db_path)
         else:
@@ -209,7 +209,7 @@ class DBInstance(object):
         Parameters:
         Returns:
         """
-        if self.db_type in file_databases:
+        if self.db_type in c.FILE_DATABASES:
             z = 'Connection status for the database at "{}": {}connected.'
             z = z.format(self.db_path, '{}')
         else:
@@ -270,11 +270,11 @@ class DBInstance(object):
             db_software_version (str): database software version.
         """
         sql = {
-            mysql: 'SELECT version()',
-            postgresql: 'SELECT version()',
-            oracle: "SELECT * FROM v$version WHERE banner LIKE 'Oracle%'",
-            sqlite: 'SELECT sqlite_version()',
-            sqlserver: 'SELECT @@VERSION'}.get(self.db_type, 'Nada')
+            MYSQL: 'SELECT version()',
+            POSTGRESQL: 'SELECT version()',
+            ORACLE: "SELECT * FROM v$version WHERE banner LIKE 'Oracle%'",
+            SQLITE: 'SELECT sqlite_version()',
+            SQLSERVER: 'SELECT @@VERSION'}.get(self.db_type, 'Nada')
 
         if sql[0:6] == 'SELECT':
             cursor = self.connection.cursor()
@@ -282,9 +282,9 @@ class DBInstance(object):
             version = cursor.fetchone()[0]
             cursor.close()
             del cursor
-        elif self.db_type == access:
+        elif self.db_type == ACCESS:
             version = "unavailable for MS Access through SQL"
-        elif self.db_lib_name != pyodbc:
+        elif self.db_lib_name != c.PYODBC:
             # This is for future use.
             version = self.connection.version
         else:
@@ -300,32 +300,32 @@ class DBInstance(object):
             db_software_version (str): database software version.
         """
         z = ''
-        if self.db_lib_name == cx_Oracle:
+        if self.db_lib_name == c.CX_ORACLE:
             z = '{}/{}@{}:{}/{}'
-        elif self.db_lib_name == psycopg2:
+        elif self.db_lib_name == c.PSYCOPG2:
             z = "user='{}' password='{}' host='{}' port='{}' dbname='{}'"
-        elif self.db_lib_name == pymysql:
+        elif self.db_lib_name == c.PYMYSQL:
             z = ''
-        elif self.db_lib_name == pyodbc:
-            if self.db_type == access:
+        elif self.db_lib_name == c.PYODBC:
+            if self.db_type == ACCESS:
                 z = ('DRIVER={{Microsoft Access Driver (*.mdb, *.accdb)}};'
                      'DBQ={};')
-            elif self.db_type == sqlserver:
+            elif self.db_type == c.SQLSERVER:
                 z = ('DRIVER={{SQL Server}};'
                      'UID={};PWD={};SERVER={};PORT={};DATABASE={}')
-        elif self.db_lib_name == sqlite3:
+        elif self.db_lib_name == c.SQLITE3:
             z = '{}'
         else:
             print('Unknown db library "{}", aborting.'.format(self.db_lib_name))
             self.close_connection()
             exit(1)
 
-        if self.db_type in {oracle, postgresql, sqlserver}:
+        if self.db_type in {ORACLE, POSTGRESQL, SQLSERVER}:
             z = z.format(self.username, self.password, self.hostname,
                          self.port_num, self.instance)
-        elif self.db_type in file_databases:
+        elif self.db_type in c.FILE_DATABASES:
             z = z.format(self.db_path)
-        elif self.db_type == mysql:
+        elif self.db_type == MYSQL:
             pass
 
         return z
@@ -340,7 +340,7 @@ class DBInstance(object):
         print('The database type is "{}".'.format(self.db_type))
         z = 'The database software version is {}.'
         print(z.format(self.db_software_version))
-        if self.db_type in file_databases:
+        if self.db_type in c.FILE_DATABASES:
             print('The database path is "{}".'.format(self.db_path))
         else:
             print('The database username is "{}".'.format(self.username))
@@ -361,26 +361,26 @@ class DBInstance(object):
         args = (self.username, self.password, self.hostname,
                 self.port_num, self.instance)
 
-        if self.db_type == access or self.db_client_exe == '':
+        if self.db_type == ACCESS or self.db_client_exe == '':
             z = '{} DOES NOT HAVE A COMMAND LINE INTERFACE.'
             z = z.format(self.db_type).upper()
             cmd = ['Error', z]
         elif not is_file_in_path(self.os, self.db_client_exe):
             z = 'Did not find {} in PATH.'.format(self.db_client_exe)
             cmd = ['Error', z]
-        elif self.db_type == mysql:
+        elif self.db_type == MYSQL:
             conn_str = '--uri={}:{}@{}:{}/{}'.format(*args)
             cmd = [self.db_client_exe, conn_str,
                    '--table', '--sql', '--quiet-start']
-        elif self.db_type == oracle:
+        elif self.db_type == ORACLE:
             conn_str = '{}/{}@{}:{}/{}'.format(*args)
             cmd = [self.db_client_exe, conn_str]
-        elif self.db_type == postgresql:
+        elif self.db_type == POSTGRESQL:
             conn_str = 'postgresql://{}:{}@{}:{}/{}'.format(*args)
             cmd = [self.db_client_exe, '-d', conn_str]
-        elif self.db_type == sqlite:
+        elif self.db_type == SQLITE:
             cmd = [self.db_client_exe, self.db_path]
-        elif self.db_type == sqlserver:
+        elif self.db_type == SQLSERVER:
             host_port = '{},{}'.format(self.hostname, self.port_num)
             cmd = [self.db_client_exe, '-U', self.username, '-P', self.password,
                    '-S', host_port, '-d', self.instance]
