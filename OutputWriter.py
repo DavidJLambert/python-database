@@ -17,31 +17,23 @@ class OutputWriter(object):
     """ Write output to standard out or file.
 
     Attributes:
-        out_file_name (str): relative or absolute path to output file,
-            or '' for standard output.
+        out_file_name (str): relative or absolute path to output file or '' for standard output.
         out_file (object): handle to opened file with name = out_file_name.
         align_col (bool): pad values with spaces to align columns?
-        col_sep (str): character(s) to separate columns in output.
-            Common choices:
+        col_sep (str): character(s) to separate columns in output. Common choices:
             "" (no characters)
             " " (single space, aka chr(32))
             chr(9) (aka the horizontal tab character)
             "|"
             ","
     """
-    def __init__(self,
-                 out_file_name: str = '',
-                 align_col: bool = True,
-                 col_sep: str = ',') -> None:
+    def __init__(self, out_file_name: str = '', align_col: bool = True, col_sep: str = ',') -> None:
         """ Constructor method for this class.
 
         Parameters:
-            out_file_name (str): relative or absolute path to output file, or ''
-                for standard output.
-            align_col (bool): if True, pad columns with spaces in the output so
-                they always have the same width.
-            col_sep (str): character(s) to separate columns in output.
-                Common choices:
+            out_file_name (str): relative or absolute path to output file, or '' for standard output.
+            align_col (bool): if True, pad columns with spaces in the output so they always have the same width.
+            col_sep (str): character(s) to separate columns in output.  Common choices:
                 "" (no characters)
                 " " (single space, aka chr(32))
                 chr(9) (aka the horizontal tab character)
@@ -218,5 +210,4 @@ class OutputWriter(object):
             print('Just wrote output to "{}".'.format(self.out_file_name))
         return
     # End of method write_rows.
-
 # End of Class OutputWriter.

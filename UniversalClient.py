@@ -15,12 +15,6 @@ For more information, see README.rst.
 """
 # -------- IMPORTS
 
-# The import hierarchy:
-#     v------- MyQueries    <-- MyConstants
-# DBClient <-- OutputWriter <-- MyFunctions <-- sys
-#     ^------- DBInstance   <-- MyFunctions <-- sys
-#                   ^-----------MyConstants
-
 from DBClient import DBClient
 from OutputWriter import OutputWriter
 from DBInstance import DBInstance
@@ -76,12 +70,17 @@ sample_db_path[SQLITE] = home + sample_db_path[SQLITE]
 # -------- MAIN PROGRAM
 
 
-def main():
+def main() -> None:
+    """ Code to execute.
+
+    Parameters:
+    Returns:
+    """
     # OS AND PYTHON VERSION STUFF
     os, py_version_major, py_version_minor = os_python_version_info()
 
     # GET DATABASE CONNECTION INFO TO USE.
-    db_type1 = ACCESS
+    db_type1 = SQLITE
 
     if db_type1 not in c.DB_TYPES:
         print('UNKNOWN DATABASE TYPE.')
@@ -271,6 +270,7 @@ def main():
     db_instance1.close_connection(del_cursors=True)
     print(db_instance1.get_connection_status())
     del instance1
+# End of function main.
 
 
 if __name__ == '__main__':
