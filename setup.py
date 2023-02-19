@@ -28,7 +28,7 @@ setup(
     url='https://github.com/DavidJLambert/Python-Universal-DB-Client',
     version='0.2.7',
     install_requires=[
-        cx_Oracle,
+        oracledb,
         psutil,
         psycopg2,
         pymysql,

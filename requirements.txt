@@ -6,19 +6,50 @@
 #
 # VERSION: 0.7.6
 #
-# DATE: Jul 9, 2020
+# DATE: Oct 22, 2022
 #
 # DATABASE CONNECTION LIBRARIES:
 
-cx_Oracle   # Oracle
-pymysql     # MySQL
-psycopg2    # PostgreSQL
-pyodbc      # Microsoft Access
-# pymssql   # Microsoft SQL Server
-# turbodbc  # Microsoft Access
-# sqlite3   # SQLite, already part of the Python Standard Library.
+# SQLite
+# sqlite3, part of the Python Standard Library.
+
+# Oracle.
+oracledb   # Formerly called cx_Oracle.
+# Windows & Mac: Python 3.7-3.10
+# Linux Python 3.6 - 3.10
+# See https://oracle.github.io/python-oracledb
+
+# MySQL.  Several connectors can be used, see https://stackoverflow.com/questions/43102442/whats-the-difference-between-mysqldb-mysqlclient-and-mysql-connector-python.
+pymysql # Reputed to be faster than mysql-connector-python. 
+# Python 3.7-3.10
+# See https://github.com/PyMySQL/PyMySQL
+# mysql-connector-python
+# Python 3.7-3.9
+# See https://github.com/mysql/mysql-connector-python
+
+# PostgreSQL.
+psycopg2
+# Python 3.6-3.10
+# See https://www.psycopg.org
+
+# ODBC.  For use with any database with ODBC drivers.  Two connectors
+pyodbc
+# Requires Microsoft Visual C++ 2015-2019 Redistributable.
+# pyodbc 4.x supports Python 2.7, 3.x?
+# pyodbc 5.x supports Python 3.7-3.10
+
+# See https://github.com/mkleehammer/pyodbc/wiki
+# turbodbc
+# Python 3.8-3.10
+# See https://turbodbc.readthedocs.io/en/latest
+
+# Microsoft SQL Server.  Two connectors can be used.
+# pyodbc, recommended by Microsoft.
+# pymssql, requires Cython, See https://pymssql.readthedocs.io/en/stable
+
 
 # OTHER STUFF:
 
 pytest
 psutil
+sqlalchemy

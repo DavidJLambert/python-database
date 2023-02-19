@@ -12,6 +12,11 @@ VERSION: 0.7.6
 DATE: Jul 9, 2020
 
 For more information, see README.rst.
+ACCESS OK
+SQLITE3 OK
+MYSQL NOT OK
+POSTGRES OK
+ORACLE OK
 """
 # -------- IMPORTS
 
@@ -30,11 +35,17 @@ sample_username = {
     ACCESS: '',
     MYSQL: 'root',
     ORACLE: 'ds2',
-    POSTGRESQL: 'root',
+    POSTGRESQL: 'ds2',
     SQLITE: '',
     SQLSERVER: 'sa'}
 
-sample_password = 'password'
+sample_password = {
+    ACCESS: '',
+    MYSQL: 'ds2',
+    ORACLE: 'ds2',
+    POSTGRESQL: 'ds2',
+    SQLITE: '',
+    SQLSERVER: 'Pa$$w0rd'}
 
 # VirtualBox Guests use NAT.
 sample_hostname = '127.0.0.1'
@@ -50,10 +61,10 @@ sample_port_num = {
 sample_instance = {
     ACCESS: '',
     MYSQL: 'DS2',
-    ORACLE: 'ORCL',
+    ORACLE: 'XE',
     POSTGRESQL: 'ds2',
     SQLITE: '',
-    SQLSERVER: 'DS2'}
+    SQLSERVER: 'DS3'}
 
 home = 'C:\\Coding\\PyCharm\\projects\\Python-Universal-DB-Client\\'
 sample_db_path = {
@@ -80,14 +91,29 @@ def main() -> None:
     os, py_version_major, py_version_minor = os_python_version_info()
 
     # GET DATABASE CONNECTION INFO TO USE.
-    db_type1 = SQLITE
-
+    prompt = "Enter the number for the database type you want:"
+    for choice_num, choice in enumerate(c.DB_TYPES):
+        prompt += f"\n{choice_num}: {choice}"
+    prompt += ": "
+    while True:
+        db_type1 = input(prompt)
+        if db_type1.isdigit():
+            db_type1 = int(db_type1)
+            if 0 <= db_type1 <= len(c.DB_TYPES)-1:
+                db_type1 = c.DB_TYPES[db_type1]
+                break
+            else:
+                print(f"Invalid integer choice: {db_type1}")
+        else:
+            print("Only integers allowed.")
     if db_type1 not in c.DB_TYPES:
         print('UNKNOWN DATABASE TYPE.')
         exit(1)
+    print(f"You chose '{db_type1}'.")
+
     db_path1 = sample_db_path[db_type1]
     username1 = sample_username[db_type1]
-    password1 = sample_password
+    password1 = sample_password[db_type1]
     hostname1 = sample_hostname
     port_num1 = sample_port_num[db_type1]
     instance1 = sample_instance[db_type1]
@@ -224,7 +250,7 @@ def main() -> None:
         # MS Access does not support bind variables/parameterization.
         query2 = query.format("'CHEVY FOSTER'", "35.0", terminator='')
     elif paramstyle2 == c.NAMED:
-        # oracle/cx_Oracle and sqlite/sqlite3.
+        # oracle/oracledb and sqlite/sqlite3.
         query2 = query.format(':actor', ':price', terminator='')
         bind_vars2 = {'actor': 'CHEVY FOSTER', 'price': 35.0}
     elif paramstyle2 == c.PYFORMAT:

@@ -135,7 +135,7 @@ class DBClient(object):
 
                 # Handle SQL results.
                 if sql_type in {'INSERT', 'UPDATE', 'DELETE'}:
-                    self.cursor.commit()
+                    self.cursor.connection.commit()
                 elif sql_type != 'SELECT':
                     print('Not a CRUD statement!')
                 elif sql_type == 'SELECT':

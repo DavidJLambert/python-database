@@ -90,7 +90,7 @@ class DBInstance(object):
 
         # Get the library's primary parameter style.
         print('Parameter style "{}".'.format(self.db_lib_obj.paramstyle))
-        # paramstyle = 'named': cx_Oracle.  Option for sqlite3 & psycopg2.
+        # paramstyle = 'named': oracledb.  Option for sqlite3 & psycopg2.
         # paramstyle = 'qmark': sqlite3 and pyodbc.
         # paramstyle = 'pyformat': pymysql and psycopg2.
 
@@ -116,7 +116,9 @@ class DBInstance(object):
             else:
                 args = (self.hostname, self.username, self.password,
                         self.instance, self.port_num)
-                self.connection = self.db_lib_obj.connect(*args)
+                # self.connection = self.db_lib_obj.connect(*args)
+                self.connection = self.db_lib_obj.connect(host=self.hostname, user=self.username, password=self.password, db=self.instance,
+                                                          port=self.port_num)
             print('Successfully connected to database.')
         except self.db_lib_obj.Error:
             print_stacktrace()
@@ -300,7 +302,7 @@ class DBInstance(object):
             db_software_version (str): database software version.
         """
         z = ''
-        if self.db_lib_name == c.CX_ORACLE:
+        if self.db_lib_name == c.ORACLEDB:
             z = '{}/{}@{}:{}/{}'
         elif self.db_lib_name == c.PSYCOPG2:
             z = "user='{}' password='{}' host='{}' port='{}' dbname='{}'"
@@ -323,6 +325,7 @@ class DBInstance(object):
         if self.db_type in {ORACLE, POSTGRESQL, SQLSERVER}:
             z = z.format(self.username, self.password, self.hostname,
                          self.port_num, self.instance)
+            print(z)
         elif self.db_type in c.FILE_DATABASES:
             z = z.format(self.db_path)
         elif self.db_type == MYSQL:

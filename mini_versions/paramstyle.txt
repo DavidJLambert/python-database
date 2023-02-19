@@ -1,0 +1,20 @@
+# paramstyle = 'format' ("WHERE name = %s")
+# paramstyle = 'named' ("WHERE name = :varname")
+# paramstyle = 'numeric' ("WHERE name = :1"): positional
+# paramstyle = 'pyformat' ("WHERE name = %(varname)s"):
+# paramstyle = 'qmark' ("WHERE name = ?")
+#
+# sqlite3: qmark (default), numeric (verified), named (verified)
+# pyscopg2: pyformat (documented), format (documented)
+# pymysql: format if params in list or tuple (documented), pyformat if params in dict (documented)
+# mysql.connector: pyformat (documented), format (documented)
+# cx_Oracle: named (verified)
+# pymssql: format (documented), pyformat (documented, accurate???)
+# pyodbc: qmark (documented)
+# google-cloud-bigquery: none?
+# snowflake-connector-python: pyformat (documented), format (documented), qmark (documented), numeric (documented)
+# ibm_db: qmark (documented)
+# access: use pyodbc
+# PyHive
+# teradata
+# PyFileMaker
