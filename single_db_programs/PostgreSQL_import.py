@@ -1,45 +1,42 @@
-""" SQLite_import.py
+""" PosgreSQL_import.py
 
-SUMMARY: Demonstration of how DB-API 2.0 code can import a flat file into a SQLite database.
+SUMMARY: Demonstration of how DB-API 2.0 code can import a flat file into a PosgreSQL database.
 
 REPOSITORY: https://github.com/DavidJLambert/Python-Universal-DB-Client
 
 AUTHOR: David J. Lambert
-
-VERSION: 0.4.0
 
 DATE: Feb 19, 2023
 
 For more information, see README.rst.
 """
 
-import sqlite3
+import psycopg
 import string
 import csv
 import tkinter as tk
 from tkinter import filedialog
 
 keep = string.ascii_lowercase + string.digits + "_ "
-ts_dict = {0: 'Single-threaded', 1: 'Multi-threaded', 3: 'Serialized'}
 commit_frequency = 25
-table_exists_select = "SELECT COUNT(name) FROM sqlite_master WHERE type='table' AND name = ?"
+table_exists_select = ("SELECT COUNT(*) FROM information_schema.tables WHERE table_type = 'BASE TABLE' AND "
+                       "table_schema NOT IN ('information_schema', 'pg_catalog') AND table_name = %s")
 
-# Get name & location of csv & DB files.  filedialog.askopenfilename is fragile, have to do this here.
+# Connection constants
+username = 'ds2'
+password = 'ds2'
+hostname = '127.0.0.1'
+port_num = 5432
+instance = 'ds2'
+
+# Get name & location of csv file.  filedialog.askopenfilename is fragile, have to do this here.
 title = 'Select the csv file to import.'
 root = tk.Tk()
 csv_file_path = filedialog.askopenfilename(title=title)
+root.destroy()
 if csv_file_path == "":
     print("No csv file selected, exiting.")
     exit(1)
-
-title = 'Select the SQLite DB to import into, or click the Cancel button to create a new DB.'
-db_path = filedialog.askopenfilename(title=title)
-root.destroy()
-if db_path == "":
-    new_db = True
-    db_path = input("Enter the name of the new DB file to create: ")
-else:
-    new_db = False
 
 # Get the column delimiter.
 delimiter = input("Enter the delimiter used to separate columns (or 'tab' for tab): ").strip()
@@ -47,13 +44,10 @@ if delimiter.lower() == "tab":
     delimiter = "\t"
 
 # Create new table, or use existing one?
-if new_db:
-    choice = '1'
-else:
-    choice = ""
-    while choice not in ('1', '2'):
-        choice = input("Enter '1' to create a table and import into it.\n"
-                       "Enter '2' to import into an existing table: ")
+choice = ""
+while choice not in ('1', '2'):
+    choice = input("Enter '1' to create a table and import into it.\n"
+                   "Enter '2' to import into an existing table: ")
 new_table = (choice == '1')
 
 # Enter SQL for create table, or auto-create from csv file column headings.
@@ -70,25 +64,31 @@ else:
     enter_SQL = False
 
 # Make connection to database.
-connection = sqlite3.connect(database=db_path, timeout=10, isolation_level='DEFERRED')
+connect_string = f"user='{username}' password='{password}' host='{hostname}' port='{port_num}' dbname='{instance}'"
+connection = psycopg.connect(connect_string)
 print("\nCreated connection.")
 
-# Properties of the sqlite3 library.
-print(f"DB-API level: {sqlite3.apilevel}.")
-print(f"DB Library Version: {sqlite3.version}/{sqlite3.version_info}.")
-print(f"SQLite version: {sqlite3.sqlite_version}/{sqlite3.sqlite_version_info} (Not in DB-API 2.0).")
-print(f"sqlite3 default parameter style: '{sqlite3.paramstyle}'. "
-      f"\n\t'numeric' and 'named' supported in sqlite3,\n\t'format' and 'pyformat' not supported in sqlite3.")
-ts = sqlite3.threadsafety
-print(f"Thread safety: {ts} ('{ts_dict[ts]}').\n\tOptions: {ts_dict}")
+# Properties of the psycopg3 library.
+print(f"DB-API level: {psycopg.apilevel}.")
+print(f"DB Library Version: {psycopg.__version__}.")
+# Set paramstyle 'format'.
+psycopg.paramstyle = 'format'
+print(f"psycopg default parameter style: '{psycopg.paramstyle}'. "
+      f"\n\t'format' supported in psycopg3,\n\t'qmark', 'named', and 'numeric' not supported.")
+print(f"Thread safety: {psycopg.threadsafety}")
 
-# Properties and methods of the connection object
-print(f"Isolation level: '{connection.isolation_level}' (Not in DB-API 2.0).  "
+# Properties of the connection object.
+print(f"Isolation level: '{connection.isolation_level}' (Not in DB-API 2.0)."
       f"\n\tOptions: 'None' (autocommit), 'DEFERRED', 'IMMEDIATE' or 'EXCLUSIVE'.")
 
 # Create cursor.
 cursor = connection.cursor()
 print("\nCreated cursor.")
+
+# PostgreSQL version.
+SQL = "SELECT VERSION()"
+cursor.execute(SQL)
+print(f"PostgreSQL Server information: {cursor.fetchone()[0]}.")
 
 if not enter_SQL:
     table_name = input("Enter the name of the table to import into: ").strip().lower()
@@ -134,7 +134,7 @@ with open(file=csv_file_path, encoding="utf8", newline='') as csv_file:
                 # Construct CREATE TABLE statement.
                 column_list = []
                 create_table_sql = []
-                create_table_sql.append(table_name + "_pkey INTEGER PRIMARY KEY AUTOINCREMENT")
+                create_table_sql.append(table_name + "_pkey SERIAL PRIMARY KEY")
                 for column in row:
                     column = column.lower().replace("#", "num")
                     new_column = ""
@@ -163,7 +163,7 @@ with open(file=csv_file_path, encoding="utf8", newline='') as csv_file:
             # Construct bind variables expression.
             columns = ", ".join(column_list)
 
-            insert_values_bind = ["?"]*len(column_list)
+            insert_values_bind = ["%s"]*len(column_list)
             insert_values_bind = "( " + ", ".join(insert_values_bind) + " )"
 
             # Construct the SQL insert.

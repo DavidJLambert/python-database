@@ -5,7 +5,7 @@
 # paramstyle = 'qmark' ("WHERE name = ?")
 #
 # sqlite3: qmark (default), numeric (verified), named (verified)
-# pyscopg2: pyformat (documented), format (documented)
+# pyscopg3: pyformat (documented), format (documented), verified that no others work.
 # pymysql: format if params in list or tuple (documented), pyformat if params in dict (documented)
 # mysql.connector: pyformat (documented), format (documented)
 # cx_Oracle: named (verified)

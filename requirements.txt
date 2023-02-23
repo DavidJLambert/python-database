@@ -6,7 +6,7 @@
 #
 # VERSION: 0.7.6
 #
-# DATE: Oct 22, 2022
+# DATE: Feb 19, 2023
 #
 # DATABASE CONNECTION LIBRARIES:
 
@@ -15,37 +15,40 @@
 
 # Oracle.
 oracledb   # Formerly called cx_Oracle.
-# Windows & Mac: Python 3.7-3.10
-# Linux Python 3.6 - 3.10
+# Windows & Mac: Python 3.7-3.11
+# Linux Python 3.6 - 3.11
 # See https://oracle.github.io/python-oracledb
 
-# MySQL.  Several connectors can be used, see https://stackoverflow.com/questions/43102442/whats-the-difference-between-mysqldb-mysqlclient-and-mysql-connector-python.
-pymysql # Reputed to be faster than mysql-connector-python. 
-# Python 3.7-3.10
+# MySQL.  
+pymysql 
+# Python 3.7-3.11
 # See https://github.com/PyMySQL/PyMySQL
-# mysql-connector-python
-# Python 3.7-3.9
+
+# MySQL has several other connectors, see https://stackoverflow.com/questions/43102442/whats-the-difference-between-mysqldb-mysqlclient-and-mysql-connector-python.
+# mysql-connector-python, reputed to be slower than pymysql
+# Python 3.7-3.9 (notice this)
 # See https://github.com/mysql/mysql-connector-python
 
 # PostgreSQL.
-psycopg2
-# Python 3.6-3.10
+psycopg[binary] # psycopg3
+# Python 3.7-3.11
 # See https://www.psycopg.org
 
-# ODBC.  For use with any database with ODBC drivers.  Two connectors
+# Specifically for Microsoft SQL Server.
+# pymssql, requires Cython, https://pymssql.readthedocs.io/en/stable
+# adodbapi, last updated Nov 2019, https://pypi.org/project/adodbapi
+# cTDS, Python 3.3-3.9, last updated Mar 2021, https://zillow.github.io/ctds
+
+# Databases that work with ODBC.
+# pyodbc, recommended by Microsoft (See https://learn.microsoft.com/en-us/sql/connect/python/python-driver-for-sql-server?view=sql-server-ver16)
+# turbodbc, Python 3.8-3.10, https://turbodbc.readthedocs.io/en/latest
+# mxODBC, last updated Nov 2016, https://pypi.org/project/egenix-mxodbc
+
+# ODBC.  For use with any database with ODBC drivers.
 pyodbc
 # Requires Microsoft Visual C++ 2015-2019 Redistributable.
-# pyodbc 4.x supports Python 2.7, 3.x?
-# pyodbc 5.x supports Python 3.7-3.10
-
+# pyodbc 4.x supports Python 2.7, 3.6+
 # See https://github.com/mkleehammer/pyodbc/wiki
-# turbodbc
-# Python 3.8-3.10
-# See https://turbodbc.readthedocs.io/en/latest
-
-# Microsoft SQL Server.  Two connectors can be used.
-# pyodbc, recommended by Microsoft.
-# pymssql, requires Cython, See https://pymssql.readthedocs.io/en/stable
 
 
 # OTHER STUFF:

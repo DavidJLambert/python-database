@@ -6,8 +6,6 @@ REPOSITORY: https://github.com/DavidJLambert/Python-Universal-DB-Client
 
 AUTHOR: David J. Lambert
 
-VERSION: 0.4.0
-
 DATE: Feb 18, 2023
 
 For more information, see README.rst.
